@@ -1,17 +1,14 @@
 #!/usr/bin/env python
 
-## file
-# brief Easily bump your CLI script version
-# license GPLv3 or later http://www.gnu.org/licenses/gpl.html
-# author Reuben Cummings <reubanogmail.com>
+""" An automated way to follow the Semantic Versioning Specification """
 
-# python imports
 import os
 import re
 import logging
 import sys
 import traceback
 import itertools
+
 from argparse import RawTextHelpFormatter
 from argparse import ArgumentParser
 from subprocess import call
