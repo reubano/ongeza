@@ -1,37 +1,139 @@
 #!/usr/bin/env python
 
-## @file
-#  @brief Program description
-#  @license GPLv3 or later http://www.gnu.org/licenses/gpl.html
-#  @author Reuben Cummings <reubano@gmail.com>
+## file
+# brief Easily bump your CLI script version
+# license GPLv3 or later http://www.gnu.org/licenses/gpl.html
+# author Reuben Cummings <reubanogmail.com>
 
 # python imports
-from sys import stdout
-import argparse
-import fileinput
+import os
+import re
+import logging
+import sys
+import traceback
+import itertools
+from argparse import RawTextHelpFormatter
+from argparse import ArgumentParser
+from subprocess import call
+from subprocess import check_output
 
-parser = argparse.ArgumentParser(description='template description')
+parser = ArgumentParser(
+	description="description: bump makes it easy for you to semantically "
+		"version your scripts.\nIf called with no options, bump will print the "
+		"script's current git tag version.", prog='bump', 
+		usage='%(prog)s [options] <dir>', formatter_class=RawTextHelpFormatter)
+
 group = parser.add_mutually_exclusive_group()
 group.add_argument(
-	'-v', '--verbose', dest='verbose', action='store_true', help='increase output verbosity')
+	'-t', '--type', dest='bumpType', type=str, choices=['m', 'n', 'p'], 
+	help="version bump type:\n"
+		"  m = major - x.0.0\n"
+		"  n = minor - 1.x.0\n"
+		"  p = patch - 1.0.x")
 
 group.add_argument(
-	'-q', '--quiet', dest='quiet', action='store_true', help='decrease output verbosity')
+	'-s', '--set', dest='set', type=str, help='set arbitrary version number')
 
 parser.add_argument(
-	'word', dest='word', type=str, default='string', help='just a word')
-	
-parser.add_argument(
-	'square', dest='square', type=int, help='display a square of a given number')
+	'-v', '--verbose', dest='verbose', action='store_true', 
+	help='increase output verbosity')
 
 parser.add_argument(
-	'-t', '--type', dest='type', type=int, choices=[0, 1, 2], help='the type')
-                    
-args = parser.parse_args()                    
+	'-g', '--tag', dest='tag', action='store_true', help='tag git repo with the'
+	' bumped version number')
+ 
+parser.add_argument(dest='projDir', type=str, help='the project directory')
 
-def main():
-	for line in fileinput.input():
-	    process(line)
-		print "line is %s" % (args.word)
+args = parser.parse_args() 
+
+def getVersion(gitDir):
+
+	# Get the current release version from git.
+	if os.path.isdir(gitDir):
+		version = check_output(
+			'cd %s; git describe --tags' % (gitDir), shell=True)
+		version = version.lstrip('v').rstrip()
+		return version.split('-')[0]
+	else:
+		raise Exception('%s is not a directory' % (gitDir))
+
+def setVersion(oldVersion, newVersion, file, pattern=None):
+	if not oldVersion:
+		# find lines in file containing pattern
+		lines = check_output("grep -ne '%s' %s" % (pattern, file), shell=True)
 		
-# if __name__ == '__main__': main()
+		# find first line containing a version number
+		cmd = "echo %s | grep -m1 '[0-9]*\.[0-9]*\.[0-9]*'" % (lines)
+		repLine = check_output(cmd, shell=True)
+		replLineNum = repLine.split(':')[0]
+		
+		# replace with new version number
+		cmd = ("sed -i '' '%s/[0-9]*\.[0-9]*\.[0-9]*/%s/g' %s" 
+			% (replLineNum, newVersion, file))
+	else:
+		cmd = "sed -i '' 's/%s/%s/g' %s" % (oldVersion, newVersion, file)
+
+	return call(cmd, shell=True)
+
+def getDevVersion(version):
+	return map(int, version.split('.'))
+
+def gitAdd(files, gitDir):
+	files = ' '.join(files)
+	return call('cd %s; git add %s' % (gitDir, files), shell=True)
+
+def gitCommit(message, gitDir):
+	return call("cd %s; git commit -m '%s'" % (gitDir, message), shell=True)
+
+def gitTag(version, gitDir):
+	cmd = ("cd %(g)s; git tag -sm 'Version %(v)s Release' v%(v)s" 
+		% {'g': gitDir, 'v': version})
+		
+	return call(cdm, shell=True)
+	
+def bumpVersion(bumpType, currVersion):
+	switch = {
+		'm': lambda: [currVersion[0] + 1, 0, 0],
+		'n': lambda: [currVersion[0], currVersion[1] + 1, 0],
+		'p': lambda: [currVersion[0], currVersion[1], currVersion[2] + 1]}
+	
+	return '.'.join(map(str, switch.get(bumpType)()))
+ 		
+def main():
+	logging.basicConfig(level=logging.WARNING)
+	log = logging.getLogger(__name__)
+	
+	try:
+		version = getVersion(args.projDir)
+		files = os.listdir(args.projDir)
+		fileExt = '.spec', '.xml', '.php', '.python'
+		versionedFiles = filter(lambda x: x.endswith(fileExt), files)
+		
+		if args.set:
+			pattern = map(getPattern, versionedFiles) # string
+			nulls = itertools.repeat(none, len(pattern))
+			versions = itertools.repeat(args.set, len(pattern))
+			map(setVersion, nulls, versions, versionedFiles, pattern)
+			string = ('Set to version %s' % (version))
+		elif args.bumpType:
+			devVersion = getDevVersion(version)
+			newVersion = bumpVersion(args.bumpType, devVersion)
+			[setVersion(devVersion, newVersion, file) for file in versionedFiles]
+	
+			if args.tag:
+				gitAdd(versionedFiles, args.projDir)
+				gitCommit(message, args.projDir)
+				gitTag(newVersion, args.projDir)
+			
+			string = ('Bump from version %s to %s' % (version, newVersion))
+		else: string = ('Current version: %s' % (version))
+				
+		print('%s' % (string))
+	except Exception as err:
+		sys.stderr.write('ERROR: %s\n' % str(err))
+#		traceback.print_exc(file=sys.stdout)
+#		log.exception('%s\n' % str(err))
+
+	sys.exit(0)	
+
+if __name__ == '__main__': main()
