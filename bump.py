@@ -25,8 +25,8 @@ group.add_argument(
 	'-t', '--type', dest='bumpType', type=str, choices=['m', 'n', 'p'], 
 	help="version bump type:\n"
 		"  m = major - x.0.0\n"
-		"  n = minor - 1.x.0\n"
-		"  p = patch - 1.0.x")
+		"  n = minor - 1.y.0\n"
+		"  p = patch - 1.0.z")
 
 group.add_argument(
 	'-s', '--set', dest='set', type=str, help='set arbitrary version number')
