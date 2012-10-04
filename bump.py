@@ -93,54 +93,64 @@ def gitCommit(message, gitDir):
 	return call("cd %s; git commit -m '%s'" % (gitDir, message), shell=True)
 
 def gitTag(version, gitDir):
-	cmd = ("cd %(g)s; git tag -sm 'Version %(v)s Release' v%(v)s" 
+	cmd = ("cd %(g)s; git tag -sm 'Version %(v)s Release' v%(v)s"
 		% {'g': gitDir, 'v': version})
-		
-	return call(cdm, shell=True)
-	
+
+	return call(cmd, shell=True)
+
 def bumpVersion(bumpType, currVersion):
 	switch = {
 		'm': lambda: [currVersion[0] + 1, 0, 0],
 		'n': lambda: [currVersion[0], currVersion[1] + 1, 0],
 		'p': lambda: [currVersion[0], currVersion[1], currVersion[2] + 1]}
-	
+
 	return '.'.join(map(str, switch.get(bumpType)()))
- 		
+
 def main():
 	logging.basicConfig(level=logging.WARNING)
 	log = logging.getLogger(__name__)
-	
+
 	try:
-		version = getVersion(args.projDir)
 		files = os.listdir(args.projDir)
-		fileExt = '.spec', '.xml', '.php', '.python'
+		fileExt = '.spec', '.xml', '.cfg'
 		versionedFiles = filter(lambda x: x.endswith(fileExt), files)
-		
-		if args.set:
-			pattern = map(getPattern, versionedFiles) # string
-			nulls = itertools.repeat(none, len(pattern))
-			versions = itertools.repeat(args.set, len(pattern))
-			map(setVersion, nulls, versions, versionedFiles, pattern)
-			string = ('Set to version %s' % (version))
-		elif args.bumpType:
-			devVersion = getDevVersion(version)
+		isTagged = hasTag(args.projDir)
+
+		if isTagged:
+			curVersion = getVersion(args.projDir)
+			devVersion = getDevVersion(curVersion)
 			newVersion = bumpVersion(args.bumpType, devVersion)
-			[setVersion(devVersion, newVersion, file) for file in versionedFiles]
-	
-			if args.tag:
-				gitAdd(versionedFiles, args.projDir)
-				gitCommit(message, args.projDir)
-				gitTag(newVersion, args.projDir)
-			
-			string = ('Bump from version %s to %s' % (version, newVersion))
-		else: string = ('Current version: %s' % (version))
-				
+		else:
+			newVersion = None
+
+		if (not args.set and not isTagged):
+			string = "No git tags found, please use the '-s' option"
+		elif (not args.set and not args.bumpType):
+			string = 'Current version: %s' % curVersion
+		elif args.set:
+			[setVersion(None, args.set, file, args.pattern)
+				for file in versionedFiles]
+
+			string = 'Set to version %s' % args.set
+		else: # it is args.bumpType
+			[setVersion(curVersion, newVersion, file)
+				for file in versionedFiles]
+
+			string = 'Bump from version %s to %s' % (curVersion, newVersion)
+
+		if args.tag and (args.set or (args.bumpType and isTagged)):
+			version = (newVersion or args.set)
+			message = 'Bump to version %s' % version
+			gitAdd(versionedFiles, args.projDir)
+			gitCommit(message, args.projDir)
+			gitTag(version, args.projDir)
+
 		print('%s' % (string))
 	except Exception as err:
 		sys.stderr.write('ERROR: %s\n' % str(err))
 #		traceback.print_exc(file=sys.stdout)
 #		log.exception('%s\n' % str(err))
 
-	sys.exit(0)	
+	exit(0)
 
 if __name__ == '__main__': main()
