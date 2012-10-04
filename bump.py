@@ -9,6 +9,7 @@ import sys
 import traceback
 import itertools
 
+from sys import exit
 from argparse import RawTextHelpFormatter
 from argparse import ArgumentParser
 from subprocess import call
@@ -44,7 +45,7 @@ parser.add_argument(
 
 parser.add_argument(dest='projDir', type=str, help='the project directory')
 
-args = parser.parse_args() 
+args = parser.parse_args()
 
 def hasTag(gitDir):
 	# Check if repo has any git tags.
@@ -67,14 +68,14 @@ def setVersion(oldVersion, newVersion, file, pattern=None):
 	if not oldVersion:
 		# find lines in file containing pattern
 		lines = check_output("grep -ne '%s' %s" % (pattern, file), shell=True)
-		
+
 		# find first line containing a version number
-		cmd = "echo %s | grep -m1 '[0-9]*\.[0-9]*\.[0-9]*'" % (lines)
+		cmd = "echo '%s' | grep -m1 '[0-9]*\.[0-9]*\.[0-9]*'" % (lines)
 		repLine = check_output(cmd, shell=True)
 		replLineNum = repLine.split(':')[0]
-		
+
 		# replace with new version number
-		cmd = ("sed -i '' '%s/[0-9]*\.[0-9]*\.[0-9]*/%s/g' %s" 
+		cmd = ("sed -i '' '%ss/[0-9]*\.[0-9]*\.[0-9]*/%s/g' %s"
 			% (replLineNum, newVersion, file))
 	else:
 		cmd = "sed -i '' 's/%s/%s/g' %s" % (oldVersion, newVersion, file)
