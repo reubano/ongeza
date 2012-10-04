@@ -16,9 +16,8 @@ from subprocess import call
 from subprocess import check_output
 
 parser = ArgumentParser(
-	description="description: bump makes it easy for you to semantically "
-		"version your scripts.\nIf called with no options, bump will print the "
-		"script's current git tag version.", prog='bump',
+	description="description: bump makes following the Semantic Versioning" "Specification a breeze.\nIf called with no options, bump will print "
+		"the script's current git tag version.", prog='bump',
 		usage='%(prog)s [options] <dir>', formatter_class=RawTextHelpFormatter)
 
 group = parser.add_mutually_exclusive_group()
