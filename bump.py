@@ -17,12 +17,12 @@ from subprocess import check_output
 parser = ArgumentParser(
 	description="description: bump makes it easy for you to semantically "
 		"version your scripts.\nIf called with no options, bump will print the "
-		"script's current git tag version.", prog='bump', 
+		"script's current git tag version.", prog='bump',
 		usage='%(prog)s [options] <dir>', formatter_class=RawTextHelpFormatter)
 
 group = parser.add_mutually_exclusive_group()
 group.add_argument(
-	'-t', '--type', dest='bumpType', type=str, choices=['m', 'n', 'p'], 
+	'-t', '--type', dest='bumpType', type=str, choices=['m', 'n', 'p'],
 	help="version bump type:\n"
 		"  m = major - x.0.0\n"
 		"  n = minor - 1.y.0\n"
@@ -32,13 +32,13 @@ group.add_argument(
 	'-s', '--set', dest='set', type=str, help='set arbitrary version number')
 
 parser.add_argument(
-	'-v', '--verbose', dest='verbose', action='store_true', 
+	'-v', '--verbose', dest='verbose', action='store_true',
 	help='increase output verbosity')
 
 parser.add_argument(
 	'-g', '--tag', dest='tag', action='store_true', help='tag git repo with the'
 	' bumped version number')
- 
+
 parser.add_argument(dest='projDir', type=str, help='the project directory')
 
 args = parser.parse_args() 
