@@ -31,6 +31,9 @@ group.add_argument(
 group.add_argument(
 	'-s', '--set', dest='set', type=str, help='set arbitrary version number')
 
+group.add_argument(
+	'-p', '--pattern', dest='pattern', default='version', type=str, help='search pattern when setting arbitrary version number')
+
 parser.add_argument(
 	'-v', '--verbose', dest='verbose', action='store_true',
 	help='increase output verbosity')
