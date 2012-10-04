@@ -42,7 +42,7 @@ parser.add_argument(
 	'-g', '--tag', dest='tag', action='store_true', help='tag git repo with the'
 	' bumped version number')
 
-parser.add_argument(dest='projDir', type=str, help='the project directory')
+parser.add_argument(dest='dir', type=str, help='the project directory')
 
 args = parser.parse_args()
 
@@ -110,13 +110,13 @@ def main():
 	log = logging.getLogger(__name__)
 
 	try:
-		files = os.listdir(args.projDir)
+		files = os.listdir(args.dir)
 		fileExt = '.spec', '.xml', '.cfg'
 		versionedFiles = filter(lambda x: x.endswith(fileExt), files)
-		isTagged = hasTag(args.projDir)
+		isTagged = hasTag(args.dir)
 
 		if isTagged:
-			curVersion = getVersion(args.projDir)
+			curVersion = getVersion(args.dir)
 			devVersion = getDevVersion(curVersion)
 			newVersion = bumpVersion(args.bumpType, devVersion)
 		else:
@@ -140,9 +140,9 @@ def main():
 		if args.tag and (args.set or (args.bumpType and isTagged)):
 			version = (newVersion or args.set)
 			message = 'Bump to version %s' % version
-			gitAdd(versionedFiles, args.projDir)
-			gitCommit(message, args.projDir)
-			gitTag(version, args.projDir)
+			gitAdd(versionedFiles, args.dir)
+			gitCommit(message, args.dir)
+			gitTag(version, args.dir)
 
 		print('%s' % (string))
 	except Exception as err:
