@@ -43,8 +43,14 @@ parser.add_argument(dest='projDir', type=str, help='the project directory')
 
 args = parser.parse_args() 
 
-def getVersion(gitDir):
+def hasTag(gitDir):
+	# Check if repo has any git tags.
+	if os.path.isdir(gitDir):
+		return check_output('cd %s; git tag' % (gitDir), shell=True)
+	else:
+		raise Exception('%s is not a directory' % (gitDir))
 
+def getVersion(gitDir):
 	# Get the current release version from git.
 	if os.path.isdir(gitDir):
 		version = check_output(
