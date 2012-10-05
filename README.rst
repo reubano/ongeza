@@ -83,6 +83,15 @@ Arguments
 | dir     |  the project directory        |
 +---------+-------------------------------+
 
+LIMITATIONS
+-----------
+
+* not pip installable
+* no built-in support for pre-release or build numbers
+	- 1.0.0-alpha, 1.0.0-alpha.1, 1.0.0-0.3.7, 1.0.0-x.7.z.92
+	- 1.0.0+build.1, 1.3.7+build.11.e0f985a
+* doesn't check validity of user set versions
+
 LICENSE
 -------
 
