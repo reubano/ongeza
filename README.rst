@@ -53,7 +53,7 @@ Examples
 
 	bump /path/to/git/repo
 
-*add tag*
+*add new tag*
 
 	bump -gtn /path/to/git/repo
 
