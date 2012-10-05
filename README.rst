@@ -86,4 +86,4 @@ Arguments
 LICENSE
 -------
 
-bump is distributed under the `MIT License <http://opensource.org/licenses/mit-license.php>`_, the same as `anotherprogram <http://opensource.org/licenses/alphabetical>`_ on which this program depends.
+bump is distributed under the `MIT License <http://opensource.org/licenses/mit-license.php>`_.
