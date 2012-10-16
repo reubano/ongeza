@@ -29,7 +29,7 @@ group.add_argument(
 		"  p = patch - 1.0.z")
 
 group.add_argument(
-	'-s', '--set', dest='set', type=str, help='set arbitrary version number')
+	'-s', '--set', dest='version', type=str, help='set arbitrary version number')
 
 parser.add_argument(
 	'-p', '--pattern', dest='pattern', default='version', type=str, help='search pattern when setting arbitrary version number')
@@ -63,7 +63,7 @@ def getVersion(gitDir):
 	else:
 		raise Exception('%s is not a directory' % (gitDir))
 
-def setVersion(oldVersion, newVersion, file, pattern=None):
+def setVersion(oldVersion, newVersion, file, dir, pattern=None):
 	if not oldVersion:
 		# find lines in file containing pattern
 		cmd = 'cd %s; grep -ine "%s" %s' % (dir, pattern, file)
@@ -75,10 +75,11 @@ def setVersion(oldVersion, newVersion, file, pattern=None):
 		replLineNum = repLine.split(':')[0]
 
 		# replace with new version number
-		cmd = ("sed -i '' '%ss/[0-9]*\.[0-9]*\.[0-9]*/%s/g' %s"
-			% (replLineNum, newVersion, file))
+		cmd = ("cd %s; sed -i '' '%ss/[0-9]*\.[0-9]*\.[0-9]*/%s/g' %s"
+			% (dir, replLineNum, newVersion, file))
 	else:
-		cmd = "sed -i '' 's/%s/%s/g' %s" % (oldVersion, newVersion, file)
+		cmd = ("cd %s; sed -i '' 's/%s/%s/g' %s"
+			% (dir, oldVersion, newVersion, file))
 
 	return call(cmd, shell=True)
 
@@ -122,22 +123,22 @@ def main():
 
 		if (not isTagged and args.bumpType):
 			string = "No git tags found, please use the '-s' option"
-		elif (isTagged and not args.bumpType and not args.set):
+		elif (isTagged and not args.bumpType and not args.version):
 			string = 'Current version: %s' % curVersion
 		elif (isTagged and args.bumpType):
 			newVersion = bumpVersion(args.bumpType, devVersion)
-			[setVersion(curVersion, newVersion, file)
+			[setVersion(curVersion, newVersion, file, args.dir)
 				for file in versionedFiles]
 
 			string = 'Bump from version %s to %s' % (curVersion, newVersion)
 		else: # it is args.set
-			[setVersion(None, args.set, file, args.pattern)
+			[setVersion(None, args.version, file, args.dir, args.pattern)
 				for file in versionedFiles]
 
-			string = 'Set to version %s' % args.set
+			string = 'Set to version %s' % args.version
 
-		if args.tag and (args.set or (args.bumpType and isTagged)):
-			version = (newVersion or args.set)
+		if args.tag and (args.version or (args.bumpType and isTagged)):
+			version = (newVersion or args.version)
 			message = 'Bump to version %s' % version
 			gitAdd(versionedFiles, args.dir)
 			gitCommit(message, args.dir)
