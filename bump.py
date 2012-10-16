@@ -31,7 +31,7 @@ group.add_argument(
 group.add_argument(
 	'-s', '--set', dest='set', type=str, help='set arbitrary version number')
 
-group.add_argument(
+parser.add_argument(
 	'-p', '--pattern', dest='pattern', default='version', type=str, help='search pattern when setting arbitrary version number')
 
 parser.add_argument(
@@ -118,24 +118,22 @@ def main():
 		if isTagged:
 			curVersion = getVersion(args.dir)
 			devVersion = getDevVersion(curVersion)
-			newVersion = bumpVersion(args.bumpType, devVersion)
-		else:
-			newVersion = None
 
-		if (not args.set and not isTagged):
+		if (not isTagged and args.bumpType):
 			string = "No git tags found, please use the '-s' option"
-		elif (not args.set and not args.bumpType):
+		elif (isTagged and not args.bumpType and not args.set):
 			string = 'Current version: %s' % curVersion
-		elif args.set:
-			[setVersion(None, args.set, file, args.pattern)
-				for file in versionedFiles]
-
-			string = 'Set to version %s' % args.set
-		else: # it is args.bumpType
+		elif (isTagged and args.bumpType):
+			newVersion = bumpVersion(args.bumpType, devVersion)
 			[setVersion(curVersion, newVersion, file)
 				for file in versionedFiles]
 
 			string = 'Bump from version %s to %s' % (curVersion, newVersion)
+		else: # it is args.set
+			[setVersion(None, args.set, file, args.pattern)
+				for file in versionedFiles]
+
+			string = 'Set to version %s' % args.set
 
 		if args.tag and (args.set or (args.bumpType and isTagged)):
 			version = (newVersion or args.set)
