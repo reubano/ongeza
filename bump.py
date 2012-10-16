@@ -32,7 +32,7 @@ group.add_argument(
 group.add_argument(
 	'-s', '--set', dest='set', type=str, help='set arbitrary version number')
 
-group.add_argument(
+parser.add_argument(
 	'-p', '--pattern', dest='pattern', default='version', type=str, help='search pattern when setting arbitrary version number')
 
 parser.add_argument(
