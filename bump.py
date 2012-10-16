@@ -70,7 +70,7 @@ def setVersion(oldVersion, newVersion, file, pattern=None):
 		lines = check_output(cmd, shell=True)
 
 		# find first line containing a version number
-		cmd = "echo '%s' | grep -m1 '[0-9]*\.[0-9]*\.[0-9]*'" % (lines)
+		cmd = 'echo "%s" | grep -im1 "[0-9]*\.[0-9]*\.[0-9]*"' % (lines)
 		repLine = check_output(cmd, shell=True)
 		replLineNum = repLine.split(':')[0]
 
