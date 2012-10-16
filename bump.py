@@ -56,8 +56,8 @@ def hasTag(gitDir):
 def getVersion(gitDir):
 	# Get the current release version from git.
 	if os.path.isdir(gitDir):
-		version = check_output(
-			'cd %s; git describe --tags' % (gitDir), shell=True)
+		cmd = 'cd %s; git describe --tags' % (gitDir)
+		version = check_output(cmd, shell=True)
 		version = version.lstrip('v').rstrip()
 		return version.split('-')[0]
 	else:
@@ -66,7 +66,8 @@ def getVersion(gitDir):
 def setVersion(oldVersion, newVersion, file, pattern=None):
 	if not oldVersion:
 		# find lines in file containing pattern
-		lines = check_output("grep -ne '%s' %s" % (pattern, file), shell=True)
+		cmd = 'cd %s; grep -ine "%s" %s' % (dir, pattern, file)
+		lines = check_output(cmd, shell=True)
 
 		# find first line containing a version number
 		cmd = "echo '%s' | grep -m1 '[0-9]*\.[0-9]*\.[0-9]*'" % (lines)
