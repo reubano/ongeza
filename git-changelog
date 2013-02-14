@@ -1,0 +1,37 @@
+#!/bin/sh
+
+VERSION="$2"
+DATE=`date +'%Y-%m-%d'`
+HEAD="\nVersion $VERSION \n"
+SUBHEAD="Released on $DATE"
+
+# create a separator, the same number of lines as the label above..
+LEN=${#SUBHEAD}
+CH='-'
+SEP=`printf '%*s' "$LEN" ' ' | tr ' ' "$CH"`
+
+case "$1" in
+  -l|--list)
+    version=$(git describe --tags --abbrev=0 $(git rev-list --tags --max-count=1))
+    if test -z "$version"; then
+      git log --pretty="format:  * %s"
+    else
+      git log --pretty="format:  * %s" $version..
+    fi
+    ;;
+  *)
+    # get default changelog file..
+    CHANGELOG=$1
+    if test "$CHANGELOG" = ""; then
+      CHANGELOG=`ls | egrep 'change|history' -i`
+      if test "$CHANGELOG" = ""; then CHANGELOG='HISTORY.md'; fi
+    fi
+    tmp="/tmp/changelog"
+    printf "$HEAD$SEP \n\n$SUBHEAD \n\n" > $tmp
+    git-changelog --list >> $tmp
+    printf '\n\n' >> $tmp
+    if [ -f $CHANGELOG ]; then cat $CHANGELOG >> $tmp; fi
+    mv $tmp $CHANGELOG
+    cat $CHANGELOG
+    ;;
+esac
