@@ -189,6 +189,7 @@ def make_git_tag(tag_name):
   '''
   info('Making tag: "%s"', tag_name)
   _call('git', 'tag', tag_name)
+  _call('git', 'push')
   _call('git', 'push', '--tags')
 
 
