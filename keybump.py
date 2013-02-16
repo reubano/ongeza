@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/Users/gregorynicholas/.virtualenvs/gae_rp_local/bin/python
 """
   keybump
   ~~~~~~~~~~~~~~~~~~~
@@ -169,19 +169,27 @@ def git_is_clean():
   '''
   return _call('git', 'diff', '--quiet') == 0
 
+def git_checkout(id):
+  '''
+  '''
+  info('Checking out: "%s"', id)
+  return _call('git', 'checkout', id)
+
 def make_git_commit(message):
   '''
     :param message:
   '''
+  info('Making commit: "%s"', message)
   _call('git', 'add', CHANGELOG)
   _call('git', 'commit', '-am', message)
 
-def make_git_tag(tag):
+def make_git_tag(tag_name):
   '''
-    :param tag:
+    :param tag_name:
   '''
-  info('Tagging "%s"', tag)
-  _call('git', 'tag', tag)
+  info('Making tag: "%s"', tag_name)
+  _call('git', 'tag', tag_name)
+  _call('git', 'push', '--tags')
 
 
 parser = ArgumentParser(
@@ -189,11 +197,9 @@ parser = ArgumentParser(
     "Specification a breeze.\nIf called with no options, bump will print "
     "the script's current git tag version.",
   prog='keybump',
-  usage='%(prog)s [options] <dir>',
+  usage='%(prog)s [options]',
   formatter_class=RawTextHelpFormatter)
 group = parser.add_mutually_exclusive_group()
-group.add_argument(
-  '-b', '--bump', help='bump version number.')
 group.add_argument(
   '-t', '--type', dest='bump_type', type=str, choices=['m', 'n', 'p'],
   help="version bump type:\n"
@@ -215,7 +221,7 @@ def main():
     non_decimal = re.compile(r'[^\d.]+')
     last_version = non_decimal.sub('', last_tag)
 
-  if not args.bump and not args.bump_type:
+  if not args.bump_type:
     info('Current tag: %s, version:%s' % (last_tag, last_version))
     exit(0)
 
@@ -229,16 +235,15 @@ def main():
     version, release_date, codename))
 
   new_version = bump_version_num([int(v) for v in version.split('.')])
+  new_release_date = datetime.now().strftime('%Y-%m-%d')
   # setup the dev new version..
-  # dev_version = new_version + '-dev'
+  dev_version = new_version + '-dev'
 
   info('Releasing %s (codename %s, release date %s)',
-    version, codename, release_date.strftime('%Y-%m-%d'))
+    new_version, codename, new_release_date)
 
   if new_version in tags:
     fail('Version "%s" is already tagged', new_version)
-  if release_date.date() != date.today():
-    fail('Release date is not today (%s != %s)')
 
   bump_changelog(new_version)
   # set_init_version(new_version)
@@ -249,13 +254,11 @@ def main():
   if not git_is_clean():
     fail('You have uncommitted changes in git')
 
-  make_git_tag(version)
-
+  make_git_tag(new_version)
   # set_init_version(dev_version)
   # set_setup_version(dev_version)
 
   info(msg)
-  _call('git', 'tag', '-l')
 
 
 if __name__ == '__main__':
