@@ -149,7 +149,7 @@ def set_setup_version(version):
 def build_and_upload():
   '''
   '''
-  _call(sys.executable, 'setup.py', 'release', 'sdist', 'upload')
+  _call(sys.executable, 'setup.py', 'sdist', 'upload')
 
 
 def get_git_tags():
@@ -210,10 +210,19 @@ group.add_argument(
 parser.add_argument(
   '-g', '--tag', dest='tag', action='store_true', help='tag git repo with the'
   ' bumped version number')
+parser.add_argument(
+  '-b', '--build', dest='build', action='store_true', help='build the release'
+  ' and upload to the python package index')
 
 
 def main():
   args = parser.parse_args()
+
+  if args.build:
+    build_and_upload()
+    info('build released and uploaded..')
+    exit(0)
+
   tags = get_git_tags()
   last_tag = ''
   last_version = '0.0.0'
@@ -260,6 +269,7 @@ def main():
   # set_setup_version(dev_version)
 
   info(msg)
+  exit(0)
 
 
 if __name__ == '__main__':
