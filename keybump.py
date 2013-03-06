@@ -14,7 +14,7 @@ import sys
 from sys import exit
 from argparse import RawTextHelpFormatter
 from argparse import ArgumentParser
-from datetime import datetime, date
+from datetime import datetime
 from subprocess import Popen, PIPE
 
 
@@ -152,6 +152,10 @@ def build_and_upload():
   _call(sys.executable, 'setup.py', 'sdist', 'upload')
 
 
+def get_git_tag():
+  tag, err = Popen(['git', 'describe'], stdout=PIPE).communicate()
+  return tag
+
 def get_git_tags():
   tags, err = Popen(['git', 'tag', '-l'], stdout=PIPE).communicate()
   return tags.splitlines()
@@ -183,12 +187,12 @@ def make_git_commit(message):
   _call('git', 'add', CHANGELOG)
   _call('git', 'commit', '-am', message)
 
-def make_git_tag(tag_name):
+def make_git_tag(msg, tag_name):
   '''
     :param tag_name:
   '''
   info('Making tag: "%s"', tag_name)
-  _call('git', 'tag', tag_name)
+  _call('git', 'tag', tag_name, '-m', msg)
   _call('git', 'push')
   _call('git', 'push', '--tags')
 
@@ -224,10 +228,9 @@ def main():
     exit(0)
 
   tags = get_git_tags()
-  last_tag = ''
+  last_tag = get_git_tag()
   last_version = '0.0.0'
-  if len(tags) > 0:
-    last_tag = tags[0]
+  if len(last_tag) > 0:
     non_decimal = re.compile(r'[^\d.]+')
     last_version = non_decimal.sub('', last_tag)
 
@@ -244,7 +247,7 @@ def main():
   info('version: %s, release_date: %s, codename: %s' % (
     version, release_date, codename))
 
-  new_version = bump_version_num([int(v) for v in version.split('.')])
+  new_version = bump_version_num([int(v) for v in version.split('.')], args.bump_type)
   new_release_date = datetime.now().strftime('%Y-%m-%d')
   # setup the dev new version..
   dev_version = new_version + '-dev'
@@ -264,7 +267,7 @@ def main():
   if not git_is_clean():
     fail('You have uncommitted changes in git')
 
-  make_git_tag(new_version)
+  make_git_tag(msg, new_version)
   # set_init_version(dev_version)
   # set_setup_version(dev_version)
 
