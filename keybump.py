@@ -72,7 +72,7 @@ def parse_changelog(last_tag, last_version):
       if match is None:
         continue
       datestr, codename = match.groups()
-      info( 'datestr: %s', datestr)
+      info('datestr: %s', datestr)
       # parse the change summary messages..
       summaries = []
       while 1:
@@ -81,6 +81,14 @@ def parse_changelog(last_tag, last_version):
           summaries.append(summary)
         else:
           break
+      # clean up summaries..
+      for line in summaries:
+        if line.startswith('Merge branch '):
+          summaries.remove(line)
+        elif line == 'whitespace.':
+          summaries.remove(line)
+        elif len(line) < 10:
+          summaries.remove(line)
       return version, parse_date(datestr), codename, summaries
 
 
