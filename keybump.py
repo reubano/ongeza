@@ -157,8 +157,10 @@ def get_git_tag():
   return tag
 
 def get_git_tags():
-  tags, err = Popen(['git', 'tag', '-l'], stdout=PIPE).communicate()
-  return tags.splitlines()
+  cmd = "git for-each-ref --format '%(refname)' refs/tags".split(' ')
+  tags, err = Popen(cmd, stdout=PIPE).communicate()
+  tags = tags.splitlines()
+  return [t.replace('refs/tags/', '') for t in tags]
 
 def has_git_tag(tags):
   '''
