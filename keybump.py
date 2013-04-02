@@ -165,10 +165,9 @@ def get_git_tag():
   return tag
 
 def get_git_tags():
-  cmd = "git for-each-ref --format '%(refname)' refs/tags".split(' ')
+  cmd = "git for-each-ref --sort='*authordate' --format='%(tag)' refs/tags".split(' ')
   tags, err = Popen(cmd, stdout=PIPE).communicate()
-  tags = tags.splitlines()
-  return [t.replace('refs/tags/', '') for t in tags]
+  return tags.splitlines()
 
 def has_git_tag(tags):
   '''

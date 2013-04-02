@@ -19,7 +19,7 @@ from setuptools import setup
 
 setup(
   name='keybump',
-  version='2.0.1',
+  version='2.0.2',
   url='http://github.com/gregorynicholas/keybump',
   license='MIT',
   author='gregorynicholas',
@@ -37,7 +37,6 @@ Semantic Versioning Specification.',
     # 'nose',
   ],
   dependency_links = [
-    # 'https://github.com/gregorynicholas/flask-gae_tests/tarball/master',
   ],
   # test_suite='nose.collector',
   classifiers=[
