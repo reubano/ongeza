@@ -2,6 +2,7 @@
 
 CHANGELOG_FILE=$1
 NEW_VERSION="$2"
+
 DATE=`date +'%Y-%m-%d'`
 HEAD="\nVersion $NEW_VERSION \n"
 SUBHEAD="Released on $DATE"
