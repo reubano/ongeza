@@ -3,8 +3,8 @@
 keybump
 -----------------------
 
-Helper script to perform a project release, and follow the Semantic Versioning
-Specification.
+Helper script to perform a project release, and follow the Semantic
+Versioning Specification.
 
 Links
 `````
@@ -19,14 +19,14 @@ from setuptools import setup
 
 setup(
   name='keybump',
-  version='2.0.2',
+  version='3.0.0',
   url='http://github.com/gregorynicholas/keybump',
   license='MIT',
   author='gregorynicholas',
   description='Helper script to perform a project release, and follow the \
 Semantic Versioning Specification.',
   long_description=__doc__,
-  scripts=['keybump.py', 'git-changelog'],
+  scripts=['keybump', 'keybump-git-changelog'],
   py_modules=[],
   # packages=['flaskext'],
   zip_safe=False,
@@ -36,7 +36,7 @@ Semantic Versioning Specification.',
   tests_require=[
     # 'nose',
   ],
-  dependency_links = [
+  dependency_links=[
   ],
   # test_suite='nose.collector',
   classifiers=[

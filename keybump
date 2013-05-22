@@ -1,0 +1,335 @@
+#!/usr/bin/env python
+"""
+  keybump
+  ~~~~~~~~~~~~~~~~~~~
+
+  Helper script to perform a project release, and follow the Semantic
+  Versioning Specification.
+
+  :copyright: (c) 2013 by gregorynicholas.
+  :license: BSD, see LICENSE for more details.
+"""
+import re
+import sys
+from sys import exit
+from argparse import RawTextHelpFormatter
+from optparse import OptionParser, OptionGroup
+from datetime import datetime
+from subprocess import Popen, PIPE
+
+
+CHANGELOG_FILE = 'CHANGES.md'
+SEP = '-'
+
+MAJOR_BUMP = 'major'
+MINOR_BUMP = 'minor'
+PATCH_BUMP = 'patch'
+BUMP_TYPE_CHOICES = [MAJOR_BUMP, MINOR_BUMP, PATCH_BUMP]
+
+
+_date_clean_re = re.compile(r'(\d+)(st|nd|rd|th)')
+
+
+def fail(message, *args):
+  print >> sys.stderr, 'Error:', message.format(*args)
+  exit(1)
+
+
+def info(message, *args):
+  print >> sys.stdout, message.format(*args)
+  # print >> sys.stderr, message % args
+
+
+def _call(*args, **kwargs):
+  return Popen(args, **kwargs).wait()
+
+
+def bump_changelog(new_version):
+  """
+    :param version: string name of the new version to bump to.
+  """
+  _call('keybump-git-changelog', CHANGELOG_FILE, new_version)
+
+
+def parse_changelog(last_tag, last_version):
+  """
+    :param last_tag:
+    :param last_version:
+    :returns:
+  """
+  with open(CHANGELOG_FILE) as f:
+    lineiter = iter(f)
+    for line in lineiter:
+      # find the latest version header..
+      match = re.search('^Version\s+(.*)', line.strip())
+      if match is None:
+        continue
+      version = match.group(1).strip()
+      value = lineiter.next()
+      if not value.count(SEP):
+        continue
+      # parse the release data and codename..
+      while 1:
+        change_info = lineiter.next().strip()
+        if change_info:
+          break
+      match = re.search(r'Released on (\d+-\d+-\d+)', change_info)
+      # match = re.search(r'Released on (\w+\s+\d+\w+\s+\d+)'
+      if match is None:
+        continue
+      datestr, codename = match.groups()
+      # parse the change summary messages..
+      summaries = []
+      while 1:
+        summary = lineiter.next().strip()
+        if summary:
+          summaries.append(summary)
+        else:
+          break
+      return (
+        version,
+        parse_date(datestr),
+        codename,
+        clean_commit_summaries(summaries))
+
+
+def clean_commit_summaries(summaries):
+  """
+  cleans up summaries. removes merge commit messages.
+  """
+  MIN_SUMMARY_LENGTH = 10
+  for line in summaries:
+    if line.startswith('Merge branch '):
+      summaries.remove(line)
+    elif line == 'whitespace.':
+      summaries.remove(line)
+    elif len(line) < MIN_SUMMARY_LENGTH:
+      summaries.remove(line)
+  return summaries
+
+
+def bump_version_num(version, bump_type=PATCH_BUMP):
+  """
+    :param version: string version in the format: [x].[x].[x]
+    :param bump_type:
+      Version bump type. Can be one of:
+        MAJOR_BUMP    major  ([x].0.0)
+        MINOR_BUMP    minor  (x.[x].0)
+        PATCH_BUMP    patch  (x.x.[x])
+    :returns:
+  """
+  try:
+    switch = {
+      'major': lambda: [version[0] + 1, 0, 0],
+      'minor': lambda: [version[0], version[1] + 1, 0],
+      'patch': lambda: [version[0], version[1], version[2] + 1]}
+    return '.'.join(map(str, switch.get(bump_type)()))
+  except ValueError:
+    fail('version string is not numeric..')
+
+
+def parse_date(datestr):
+  """
+    :param datestr: string date in the format: %Y-%m-%d
+    :returns: `datetime.date` object parsed from the datestr param.
+  """
+  datestr = _date_clean_re.sub(r'\1', datestr)
+  # return datetime.strptime(datestr, '%B %d %Y')
+  return datetime.strptime(datestr, '%Y-%m-%d')
+
+
+def set_filename_version(filename, version_number, pattern):
+  """
+    :param filename:
+    :param version_number:
+    :param pattern:
+  """
+  changed = []
+
+  def inject_version(match):
+    before, old, after = match.groups()
+    changed.append(True)
+    return before + version_number + after
+  with open(filename) as f:
+    contents = re.sub(
+      r"^(\s*%s\s*=\s*')(.+?)(')(?sm)" % pattern, inject_version, f.read())
+  if not changed:
+    fail('could not find {} in {}', pattern, filename)
+  with open(filename, 'w') as f:
+    f.write(contents)
+
+
+def set_init_version(version):
+  """
+    :param version:
+  """
+  info('Setting __init__.py version to {}', version)
+  set_filename_version('__init__.py', version, '__version__')
+
+
+def set_setup_version(version):
+  """
+    :param version:
+  """
+  info('Setting setup.py version to {}', version)
+  set_filename_version('setup.py', version, 'version')
+
+
+def build_and_upload():
+  """
+  """
+  _call(sys.executable, 'setup.py', 'sdist', 'upload')
+
+
+def get_current_git_tag():
+  tag, err = Popen(['git', 'describe'], stdout=PIPE).communicate()
+  return tag
+
+
+def get_git_tags():
+  """
+    :returns: list of git tags, sorted by the date created.
+  """
+  cmd = "git for-each-ref --sort='*authordate' --format='%(tag)' "
+  "refs/tags".split(' ')
+  tags, err = Popen(cmd, stdout=PIPE).communicate()
+  return tags.splitlines()
+
+
+def git_is_clean():
+  """
+    :returns: boolean if there is a dirty index.
+  """
+  return _call('git', 'diff', '--quiet') == 0
+
+
+def git_checkout(id):
+  """
+    :param id: string identifier of the commit'ish to checkout.
+  """
+  info('checking out: "{}"', id)
+  return _call('git', 'checkout', id)
+
+
+def make_git_commit(message):
+  """
+    :param message: string message for the commit.
+  """
+  info('making git commit: "{}"', message)
+  _call('git', 'add', CHANGELOG_FILE)
+  _call('git', 'commit', '-am', message)
+
+
+def make_git_tag(msg, tag_name):
+  """
+    :param tag_name: string name for the tag.
+  """
+  info('making git tag: "{}"', tag_name)
+  _call('git', 'tag', tag_name, '-m', msg)
+
+
+def push_to_remote():
+  """
+  """
+  _call('git', 'push')
+  _call('git', 'push', '--tags')
+
+
+parser = OptionParser(
+  description="description: keybump makes following the semantic versioning "
+ "specification a breeze. \n"
+ "if called with no options, keybump will print the current git repository's "
+ "tag + version name.",
+  prog="keybump",
+  usage="%(prog)s [options]",
+  formatter_class=RawTextHelpFormatter)
+
+group = OptionGroup(parser, "bump options")
+group.add_option(
+  "--type", dest="bump_type", default=PATCH_BUMP, metavar="TYPE",
+  choices=BUMP_TYPE_CHOICES, help="""version bump type to increment. must be
+  one of:
+    major  -  [x].x.x
+    minor  -  x.[x].x
+    patch  -  x.x.[x]""")
+
+group = OptionGroup(parser, "tag options")
+group.add_argument(
+  '--skip-tag', dest='skip_tag', action='store_true', metavar="SKIPTAG",
+  default=False, help="""skips creating a git tag at the current HEAD.""")
+group.add_argument(
+  '--tag-name', dest='tag_name', metavar="NAME",
+  help="specify the name of the tag to create. must be formatted as a "
+  "semantic version number.")
+group.add_argument(
+  '--skip-push', dest='skip_push', action='store_true', metavar="SKIPPUSH",
+  default=False, help="""skips pushing to the remote origin.""")
+
+# parser.add_argument(
+#   '-b', '--build', dest='build', action='store_true', help="""
+#   build the release and upload to the python package index""")
+
+
+def main():
+  (options, args) = parser.parse_args()
+
+  if args.build:
+    build_and_upload()
+    info('build released and uploaded..')
+    exit(0)
+
+  tags = get_git_tags()
+  last_tag = get_current_git_tag()
+  last_version = '0.0.0'
+  if len(last_tag) > 0:
+    non_decimal = re.compile(r'[^\d.]+')
+    last_version = non_decimal.sub('', last_tag)
+
+  if not args.bump_type:
+    info('current tag: {}, version:{}', (last_tag, last_version))
+    exit(0)
+
+  changes = parse_changelog(last_tag, last_version)
+  if changes is None:
+    fail('could not parse changelog..')
+
+  # increment the version..
+  version, release_date, codename, summaries = changes
+  info('version: {}, release_date: {}, codename: {}', (
+    version, release_date, codename))
+
+  new_version = bump_version_num(
+    [int(v) for v in version.split('.')], args.bump_type)
+  new_release_date = datetime.now().strftime('%Y-%m-%d')
+  # setup the dev new version..
+  # dev_version = new_version + '-dev'
+
+  info('releasing {} (codename {}, release date {})',
+       new_version, codename, new_release_date)
+
+  if new_version in tags:
+    fail('version "{}" is already tagged', new_version)
+
+  bump_changelog(new_version)
+  # set_init_version(new_version)
+  # set_setup_version(new_version)
+  msg = 'Version bumped to {}'.format(new_version)
+  make_git_commit(msg)
+
+  if not git_is_clean():
+    fail("""you have uncommitted changes in git. stash your changes.""")
+
+  if not options.skip_tag:
+    make_git_tag(msg, new_version)
+  # set_init_version(dev_version)
+  # set_setup_version(dev_version)
+
+  if not options.skip_push:
+    push_to_remote()
+
+  info(msg)
+  exit(0)
+
+
+if __name__ == '__main__':
+  main()
