@@ -1,8 +1,9 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
-VERSION="$2"
+CHANGELOG_FILE=$1
+NEW_VERSION="$2"
 DATE=`date +'%Y-%m-%d'`
-HEAD="\nVersion $VERSION \n"
+HEAD="\nVersion $NEW_VERSION \n"
 SUBHEAD="Released on $DATE"
 
 # create a separator, the same number of lines as the label above..
@@ -21,17 +22,16 @@ case "$1" in
     ;;
   *)
     # get default changelog file..
-    CHANGELOG=$1
-    if test "$CHANGELOG" = ""; then
-      CHANGELOG=`ls | egrep 'change|history' -i`
-      if test "$CHANGELOG" = ""; then CHANGELOG='HISTORY.md'; fi
+    if test "$CHANGELOG_FILE" = ""; then
+      CHANGELOG_FILE=`ls | egrep 'change|history' -i`
+      if test "$CHANGELOG_FILE" = ""; then CHANGELOG_FILE='HISTORY.md'; fi
     fi
     tmp="/tmp/changelog"
     printf "$HEAD$SEP \n\n$SUBHEAD \n\n" > $tmp
     git-changelog --list >> $tmp
     printf '\n\n' >> $tmp
-    if [ -f $CHANGELOG ]; then cat $CHANGELOG >> $tmp; fi
-    mv $tmp $CHANGELOG
-    cat $CHANGELOG
+    if [ -f $CHANGELOG_FILE ]; then cat $CHANGELOG_FILE >> $tmp; fi
+    mv $tmp $CHANGELOG_FILE
+    cat $CHANGELOG_FILE
     ;;
 esac
