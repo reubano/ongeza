@@ -1,0 +1,519 @@
+#!/usr/bin/env python
+"""
+  keybump
+  ~~~~~~~~~~~~~~~~~~~
+
+  Helper script to perform a project release, and follow the Semantic
+  Versioning Specification.
+
+  :copyright: (c) 2013 by gregorynicholas.
+  :license: BSD, see LICENSE for more details.
+"""
+import re
+import sys
+from sys import exit
+from optparse import OptionParser
+from datetime import datetime
+from subprocess import Popen, PIPE
+
+
+CHANGELOG_FILE = 'CHANGES.md'
+SEP = '-'
+VERSION_FMT = "Version bumped to {}"
+CHANGELOG_FMT = """
+Version {{version}}
+----------------------
+
+Released on {{date}}
+
+{{summaries}}
+
+"""
+MAJOR_BUMP = "major"
+MINOR_BUMP = "minor"
+PATCH_BUMP = "patch"
+BUMP_TYPES = [MAJOR_BUMP, MINOR_BUMP, PATCH_BUMP]
+BANNER = """
+edit the changelog summaries. press <enter> to complete:
+========================================================
+"""
+
+
+class Release(object):
+  def __init__(self, version=None, date=None, codename=None, summaries=None):
+    """
+      :param version: string version in the format: [x].[x].[x]
+    """
+    self.version = version or "0.0.0"
+    self.date = self.parse_datestr(date or today_str())
+    self.codename = codename
+    self.set_summaries(summaries or [])
+
+  @property
+  def version_msg(self):
+    return VERSION_FMT.format(self.version)
+
+  @property
+  def date_msg(self):
+    return self.date.strftime('%Y-%m-%d')
+
+  def parse_datestr(self, datestr):
+    """
+      :param datestr: string date in the format: %Y-%m-%d
+      :returns: `datetime.date` object parsed from the datestr param.
+    """
+    datestr = _date_clean_re.sub(r'\1', datestr)
+    # return datetime.strptime(datestr, '%B %d %Y')
+    return datetime.strptime(datestr, '%Y-%m-%d')
+
+  def set_summaries(self, summaries):
+    self.summaries = self.clean_commit_summaries(summaries)
+
+  def clean_commit_summaries(self, summaries):
+    """
+    cleans up summaries. removes merge commit messages.
+    """
+    MIN_SUMMARY_LENGTH = 10
+    for line in summaries:
+      if line.startswith('Merge branch '):
+        summaries.remove(line)
+      elif line == 'whitespace.':
+        summaries.remove(line)
+      elif len(line) < MIN_SUMMARY_LENGTH:
+        summaries.remove(line)
+    return summaries
+
+  def bump_num(self, version, bump_type=PATCH_BUMP):
+    """
+      :param bump_type:
+        Version bump type. Can be one of:
+          MAJOR_BUMP    major  ([x].0.0)
+          MINOR_BUMP    minor  (x.[x].0)
+          PATCH_BUMP    patch  (x.x.[x])
+      :returns:
+    """
+    try:
+      switch = {
+        'major': lambda: [version[0] + 1, 0, 0],
+        'minor': lambda: [version[0], version[1] + 1, 0],
+        'patch': lambda: [version[0], version[1], version[2] + 1]}
+      return '.'.join(map(str, switch.get(bump_type)()))
+    except ValueError:
+      fail('version string is not numeric..')
+
+  def bump(self, bump_type=PATCH_BUMP):
+    self.version = self.bump_num(
+      [int(v) for v in self.version.split('.')], bump_type)
+
+
+_date_clean_re = re.compile(r'(\d+)(st|nd|rd|th)')
+
+
+def fail(message, *args):
+  print >> sys.stderr, 'error:', message.format(*args)
+  exit(1)
+
+
+def info(message, *args):
+  print >> sys.stdout, message.format(*args)
+  # print >> sys.stderr, message % args
+
+
+def _call(*args, **kwargs):
+  return Popen(args, **kwargs).wait()
+
+
+def get_changelog_summaries_since(last_tag):
+  sep = "-------------------"
+  cmd = [
+    "git", "log", "--no-merges",
+    "--pretty=%B{}".format(sep), "{}..".format(last_tag)]
+  rv, err = Popen(cmd, stdout=PIPE).communicate()
+  return [x.strip() for x in rv.split(sep)]
+
+
+def bump_changelog(release):
+  """
+    :param version: string name of the new version to bump to.
+  """
+  SUMMARY_FMT = "\n    * "
+  rv = CHANGELOG_FMT.replace("{{version}}", release.version)
+  rv = rv.replace("{{date}}", release.date_msg)
+  rv = rv.replace(
+    "{{summaries}}",
+    "    * " + SUMMARY_FMT.join(release.summaries))
+  return rv
+
+
+def prepend_changelog(data):
+  contents = ""
+  with open(CHANGELOG_FILE, 'r') as f:
+    if isinstance(data, basestring):
+      contents = f.read()
+    else:
+      contents = f.readlines()
+  write_changelog(data + "\n" + contents)
+
+
+def write_changelog(data):
+  with open(CHANGELOG_FILE, 'w') as f:
+    if isinstance(data, basestring):
+      f.write(data)
+    else:
+      f.writelines(data)
+
+
+def parse_changelog(last_tag, last_version):
+  """
+  parses the contents of the changelog file.
+
+    :param last_tag:
+    :param last_version:
+    :returns: instance of a `Release` object.
+  """
+  with open(CHANGELOG_FILE) as f:
+    lineiter = iter(f)
+    for line in lineiter:
+      # find the latest version header..
+      match = re.search('^Version\s+(.*)', line.strip())
+      if match is None:
+        continue
+      version = match.group(1).strip()
+      value = lineiter.next()
+      if not value.count(SEP):
+        continue
+      # parse the release data and codename..
+      while 1:
+        change_info = lineiter.next().strip()
+        if change_info:
+          break
+
+      reg = re.compile('Released on (\d+-\d+-\d+)(?:, codename (.*))?(?i)')
+      match = reg.search(change_info)
+      if match is None:
+        continue
+
+      # datestr = match.groups()
+      datestr, codename = match.groups()
+      # info('change_info: datestr: {}, codename: {}', datestr, codename)
+
+      # parse the change summary messages..
+      summaries = []
+      while 1:
+        summary = lineiter.next().strip()
+        if summary:
+          summaries.append(summary)
+        else:
+          break
+      return Release(version, datestr, codename, summaries)
+    # no result was returned.. see if it's because the file was empty..
+    if (len(f.read().strip()) > 1):
+      fail("unable to parse the change log contents.. verify it's in the "
+           "correct format.")
+
+
+def today_str():
+  return datetime.now().strftime('%Y-%m-%d')
+
+
+def set_filename_version(filename, version_number, pattern):
+  """
+    :param filename:
+    :param version_number:
+    :param pattern:
+  """
+  changed = []
+
+  def inject_version(match):
+    before, old, after = match.groups()
+    changed.append(True)
+    return before + version_number + after
+  with open(filename) as f:
+    contents = re.sub(
+      r"^(\s*%s\s*=\s*')(.+?)(')(?sm)" % pattern, inject_version, f.read())
+  if not changed:
+    fail('could not find {} in {}', pattern, filename)
+  with open(filename, 'w') as f:
+    f.write(contents)
+
+
+def set_init_version(version):
+  """
+    :param version:
+  """
+  info('Setting __init__.py version to {}', version)
+  set_filename_version('__init__.py', version, '__version__')
+
+
+def set_setup_version(version):
+  """
+    :param version:
+  """
+  info('Setting setup.py version to {}', version)
+  set_filename_version('setup.py', version, 'version')
+
+
+def build_and_upload():
+  _call(sys.executable, 'setup.py', 'sdist', 'upload')
+
+
+def get_current_git_tag():
+  tag, err = Popen(
+    ['git', 'describe'], stdout=PIPE, stderr=PIPE).communicate()
+  return tag.strip()
+
+
+def get_current_or_last_git_tag(tags):
+  """
+    :param tags:
+      list of git tags, sorted by the date of the commit it points to.
+  """
+  tag = get_current_git_tag()
+  if tag not in tags:
+    # describe makes up it's own tag names, so make sure we have a real tag
+    # to build from, else we're fucked.
+    tag = tags[-1]
+  return tag
+
+
+def get_git_tags():
+  """
+    :returns:
+      list of git tags, sorted by the date of the commit it points to.
+  """
+  cmd = "git for-each-ref --format='%(tag)' refs/tags"
+  # cmd = "git for-each-ref --format='%(tag)' refs/tags"
+  tags, err = Popen(cmd.split(' '), stdout=PIPE, stderr=PIPE).communicate()
+  if err and len(err) > 0:
+    fail('unable to get list of git tags: {}..', err)
+  # strips single quotes that for some reason are carrying over..
+  return [x[1:-1] for x in tags.splitlines()]
+
+
+def git_is_clean():
+  """
+    :returns: boolean if there is a dirty index.
+  """
+  return _call('git', 'diff', '--quiet') == 0
+
+
+def git_diff_files():
+  """
+    :returns: list of string names of the files that are dirty.
+  """
+  files, err = Popen(
+    ['git', 'diff', '--minimal', '--numstat'], stdout=PIPE).communicate()
+  return [x.split('\t')[-1] for x in files.splitlines()]
+
+
+def git_checkout(id):
+  """
+    :param id: string identifier of the commit'ish to checkout.
+  """
+  info('checking out: "{}"', id)
+  return _call('git', 'checkout', id)
+
+
+def git_stash():
+  """
+  stashes current changes.
+  """
+  return _call('git', 'stash')
+
+
+def make_git_commit(message):
+  """
+    :param message: string message for the commit.
+  """
+  info('making git commit: "{}"', message)
+  _call('git', 'add', CHANGELOG_FILE)
+  _call('git', 'commit', '-am', message)
+
+
+def make_git_tag(msg, tag_name):
+  """
+    :param tag_name: string name for the tag.
+  """
+  info('making git tag: "{}"', tag_name)
+  _call('git', 'tag', tag_name, '-m', msg)
+
+
+def push_to_remote():
+  """
+  pushes branch and tags to remote.
+  """
+  _call('git', 'push')
+  _call('git', 'push', '--tags')
+
+
+def set_default_changelog(version):
+  dt = today_str()
+  contents = CHANGELOG_FMT.replace('{{date}}', dt)
+  contents = contents.replace('{{version}}', version)
+  contents = contents.replace('{{summaries}}', "  * initial version")
+  write_changelog(contents)
+  return Release(version, dt, None, [])
+
+
+def ensure_clean_index(options):
+  if git_is_clean():
+    return
+  files = git_diff_files()
+  msg = """cannot bump the version with a dirty git index.
+you have uncommitted changes. stash your changes, or
+do something to the following files:
+
+  {}\n""".format('\n  '.join(files))
+  if options.skip_interactive:
+    fail(msg)
+  # clean the index..
+  info(msg)
+  do_stash = raw_input(
+    "want keybump to snort -achem stash- your changes? "
+    "[Y / n]: ").upper()
+  if do_stash != "Y":
+    pass  # fail("cannot continue with dirty index..")
+  info("\nok, you asked for it..\n")
+  git_stash()
+  ensure_clean_index(options)
+
+
+parser = OptionParser(
+  description="description: keybump makes following the semantic versioning "
+ "specification a breeze. \n"
+ "if called with no options, keybump will print the current git repository's "
+ "tag + version name.",
+  prog="keybump",
+  usage="%(prog)s [options]")
+
+parser.add_option(
+  '--skip-interactive', dest='skip_interactive', action='store_true',
+  metavar="SKIPINTERACTIVE", default=False,
+  help="skips interactive command line interface.")
+
+parser.add_option(
+  "--bump", dest="bump_type", metavar="BUMP",
+  choices=BUMP_TYPES, help="""version bump type to increment. must be
+  one of:
+    major [x].x.x
+    minor x.[x].x
+    patch x.x.[x]""")
+
+parser.add_option(
+  '--skip-commit', dest='skip_commit', action='store_true',
+  metavar="SKIPCOMMIT",
+  default=False, help="skips creating a git tag at the current HEAD.")
+
+parser.add_option(
+  '--skip-tag', dest='skip_tag', action='store_true', metavar="SKIPTAG",
+  default=False, help="skips creating a git tag at the current HEAD.")
+
+parser.add_option(
+  '--skip-push', dest='skip_push', action='store_true', metavar="SKIPPUSH",
+  default=False, help="skips pushing to the remote origin.")
+
+parser.add_option(
+  '--build', dest='build', action='store_true', help="build "
+  "the release and upload to the python package index.")
+
+
+def main():
+  (options, args) = parser.parse_args()
+
+  if options.build:
+    build_and_upload()
+    info("build released and uploaded..")
+    exit(0)
+
+  tags = get_git_tags()
+  # what ro do on first time run? no tags yet..
+  if len(tags) < 1:
+    fail("""create a tag for version: 0.0.0 and try again.. sorry, we're
+still ghetto riggin this script along..""")
+    # todo
+
+  current_tag = get_current_or_last_git_tag(tags)
+  last_version = "0.0.0"
+  if len(current_tag) > 0:
+    non_decimal = re.compile(r'[^\d.]+')
+    last_version = non_decimal.sub('', current_tag)
+
+  if not options.bump_type:
+    info("""version information:
+
+  latest tag:   {}
+  current tag:  {}
+  version id:   {}""", tags[-1], current_tag, last_version)
+    # exit without error..
+    exit(0)
+
+  ensure_clean_index(options)
+  last_release = parse_changelog(current_tag, last_version)
+  if last_release is None:
+    msg = "could not parse release from changelog history in CHANGES.md."
+    if not options.skip_interactive:
+      # set to initial version..
+      info(msg)
+      set_initial = raw_input("""
+that's beacuse the file is empty. want keybump to
+"setup the initial file?  [Y / n]: """).upper()
+      if set_initial.upper() != "Y":
+        fail(msg)
+      info("\nok, you asked for it..\n")
+      last_release = set_default_changelog(last_version)
+    else:
+      fail(msg)
+
+  # increment the version..
+  new_release = Release(
+    last_release.version, today_str(), last_release.codename)
+  new_release.bump()
+  if new_release.version in tags:
+    fail("version `{}` is already tagged", new_release.version)
+
+  info(""""previous release: {} (codename: {}, date: {})
+creating release: {} (codename: {}, date: {})\n""",
+       last_release.version, last_release.codename, last_release.date,
+       new_release.version, new_release.codename, new_release.date)
+
+  # todo: setup the dev new version..
+  # dev_version = new_version + '-dev'
+
+  summaries = get_changelog_summaries_since(current_tag)
+  new_release.set_summaries(summaries)
+  changelog = bump_changelog(new_release)
+
+  # todo: present string to user to customize before continuing..
+  # if not options.skip_interactive:
+  #   readline.set_startup_hook(lambda: readline.insert_text(changelog))
+  #   changelog = raw_input(BANNER)
+
+  if not options.skip_interactive:
+    raw_input("""========================================================
+review + edit your CHANGES.md changelog summary. when you
+are finished, press any key here to continue..
+""")
+  prepend_changelog(changelog)
+
+  # todo
+  # set_init_version(new_version)
+  # set_setup_version(new_version)
+
+  if not options.skip_commit:
+    make_git_commit(new_release.version_msg)
+
+  if not options.skip_tag:
+    make_git_tag(new_release.version_msg, new_release.version)
+
+  if not options.skip_push:
+    push_to_remote()
+
+  info("""
+========================================================
+release complete: {}.
+""".format(new_release.version_msg))
+  exit(0)
+
+
+if __name__ == '__main__':
+  main()
