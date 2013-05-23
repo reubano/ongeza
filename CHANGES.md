@@ -1,4 +1,17 @@
 
+Version 3.0.0
+----------------------
+
+Released on 2013-05-23
+
+    * removed:    keybump-git-changelog
+    * added more options
+        * git tag + commit + push is not done optionally by specifying:
+          skip_tag, skip_commit, skip_push respectively
+    * script fails when there is uncommitted junk in the repo
+    * refactored quite a bit of the code to make it a bit more OOP
+
+
 Version 2.0.2
 ----------------------
 
