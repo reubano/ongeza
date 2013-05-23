@@ -3,8 +3,8 @@
 keybump
 -----------------------
 
-Helper script to perform a project release, and follow the Semantic
-Versioning Specification.
+helper script to perform a project release, and follow the semantic
+versioning specification.
 
 Links
 `````
@@ -26,7 +26,7 @@ setup(
   description='Helper script to perform a project release, and follow the \
 Semantic Versioning Specification.',
   long_description=__doc__,
-  scripts=['keybump', 'keybump-git-changelog'],
+  scripts=['keybump'],
   py_modules=[],
   # packages=['flaskext'],
   zip_safe=False,
