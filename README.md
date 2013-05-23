@@ -14,7 +14,8 @@ Requirements
 
 keybump requires the following in order to run properly:
 
-* `Python >= 2.5 <http://www.python.org/download>`_
+* `python >= 2.5 <http://www.python.org/download>`_
+* `git >= 1.8 <http://www.python.org/download>`_
 
 Preparation
 -----------
@@ -42,6 +43,7 @@ Usage
 
   keybump [options] <dir>
 
+
 Examples
 ^^^^^^^^
 
@@ -61,15 +63,17 @@ Examples
 
   keybump -s 1.0.2  /path/to/git/repo
 
+
 Options
 ^^^^^^^
 
-    -h, --help            show this help message and exit
-    -t {m,n,p}, --type {m,n,p}
-              version bump type:
-                m = major - x.0.0
-                n = minor - 1.y.0
-                p = patch - 1.0.z
+    -h, --help      show this help message and exit
+    --b --bump      {major ,minor, patch}
+                    version bump type:
+                      major:  [x].x.x
+                      minor:  x.[x].x
+                      patch:  x.x.[x]
+
     -s SET, --set SET     set arbitrary version number
     -p PATTERN, --pattern PATTERN
               search pattern when setting arbitrary version number
@@ -94,4 +98,4 @@ LIMITATIONS
 LICENSE
 -------
 
-bump is distributed under the `MIT License <http://opensource.org/licenses/mit-license.php>`_.
+keybump is distributed under the `MIT License <http://opensource.org/licenses/mit-license.php>`_.
