@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 """
   keybump
-  ~~~~~~~~~~~~~~~~~~~
+  ~~~~~~~
 
-  Helper script to perform a project release, and follow the Semantic
-  Versioning Specification.
+  helper script to perform a project release, and follow the semantic
+  versioning specification.
 
   :copyright: (c) 2013 by gregorynicholas.
   :license: BSD, see LICENSE for more details.
@@ -17,9 +17,10 @@ from datetime import datetime
 from subprocess import Popen, PIPE
 
 
-CHANGELOG_FILE = 'CHANGES.md'
 SEP = '-'
-VERSION_FMT = "Version bumped to {}"
+CHANGELOG_FILE = 'CHANGES.md'
+TAG_MSG_FMT = "Version bumped to {}"
+COMMIT_MSG_FMT = "Version bumped to {}"
 CHANGELOG_FMT = """
 Version {{version}}
 ----------------------
@@ -40,6 +41,10 @@ edit the changelog summaries. press <enter> to complete:
 
 
 class Release(object):
+  """
+  object representing a version release.
+  """
+
   def __init__(self, version=None, date=None, codename=None, summaries=None):
     """
       :param version: string version in the format: [x].[x].[x]
@@ -50,8 +55,12 @@ class Release(object):
     self.set_summaries(summaries or [])
 
   @property
-  def version_msg(self):
-    return VERSION_FMT.format(self.version)
+  def tag_msg(self):
+    return TAG_MSG_FMT.format(self.version)
+
+  @property
+  def commit_msg(self):
+    return COMMIT_MSG_FMT.format(self.version)
 
   @property
   def date_msg(self):
@@ -212,50 +221,20 @@ def parse_changelog(last_tag, last_version):
            "correct format.")
 
 
+def set_default_changelog(version):
+  dt = today_str()
+  contents = CHANGELOG_FMT.replace('{{date}}', dt)
+  contents = contents.replace('{{version}}', version)
+  contents = contents.replace('{{summaries}}', "  * initial version")
+  write_changelog(contents)
+  return Release(version, dt, None, [])
+
+
 def today_str():
   return datetime.now().strftime('%Y-%m-%d')
 
 
-def set_filename_version(filename, version_number, pattern):
-  """
-    :param filename:
-    :param version_number:
-    :param pattern:
-  """
-  changed = []
-
-  def inject_version(match):
-    before, old, after = match.groups()
-    changed.append(True)
-    return before + version_number + after
-  with open(filename) as f:
-    contents = re.sub(
-      r"^(\s*%s\s*=\s*')(.+?)(')(?sm)" % pattern, inject_version, f.read())
-  if not changed:
-    fail('could not find {} in {}', pattern, filename)
-  with open(filename, 'w') as f:
-    f.write(contents)
-
-
-def set_init_version(version):
-  """
-    :param version:
-  """
-  info('Setting __init__.py version to {}', version)
-  set_filename_version('__init__.py', version, '__version__')
-
-
-def set_setup_version(version):
-  """
-    :param version:
-  """
-  info('Setting setup.py version to {}', version)
-  set_filename_version('setup.py', version, 'version')
-
-
-def build_and_upload():
-  _call(sys.executable, 'setup.py', 'sdist', 'upload')
-
+# git helpers..
 
 def get_current_git_tag():
   tag, err = Popen(
@@ -346,15 +325,6 @@ def push_to_remote():
   _call('git', 'push', '--tags')
 
 
-def set_default_changelog(version):
-  dt = today_str()
-  contents = CHANGELOG_FMT.replace('{{date}}', dt)
-  contents = contents.replace('{{version}}', version)
-  contents = contents.replace('{{summaries}}', "  * initial version")
-  write_changelog(contents)
-  return Release(version, dt, None, [])
-
-
 def ensure_clean_index(options):
   if git_is_clean():
     return
@@ -378,22 +348,69 @@ do something to the following files:
   ensure_clean_index(options)
 
 
+# python package..
+
+def set_version_in_file(filename, version_number, pattern):
+  """
+    :param filename:
+    :param version_number:
+    :param pattern:
+  """
+  changed = []
+
+  def inject_version(match):
+    before, old, after = match.groups()
+    changed.append(True)
+    return before + version_number + after
+
+  with open(filename) as f:
+    contents = re.sub(
+      r"^(\s*%s\s*=\s*')(.+?)(')(?sm)" % pattern, inject_version, f.read())
+  if len(changed) < 1:
+    fail(
+      "could not set init file version. pattern {} not found in {}",
+      pattern, filename)
+  with open(filename, 'w') as f:
+    f.write(contents)
+
+
+def set_init_py_version(version):
+  """
+    :param version:
+  """
+  info('setting __init__.py version to: {}', version)
+  set_version_in_file('__init__.py', version, '__version__')
+
+
+def set_setup_py_version(version):
+  """
+    :param version:
+  """
+  info('Setting setup.py version to {}', version)
+  set_version_in_file('setup.py', version, 'version')
+
+
+def setup_py_distribute():
+  _call(sys.executable, 'setup.py', 'sdist', 'upload')
+
+
+# cli interface..
+
 parser = OptionParser(
   description="description: keybump makes following the semantic versioning "
  "specification a breeze. \n"
  "if called with no options, keybump will print the current git repository's "
- "tag + version name.",
+ "tag + version name",
   prog="keybump",
   usage="%(prog)s [options]")
 
 parser.add_option(
   '--skip-interactive', dest='skip_interactive', action='store_true',
-  metavar="SKIPINTERACTIVE", default=False,
-  help="skips interactive command line interface.")
+  default=False, help="skips interactive command line interface.")
 
 parser.add_option(
-  "--bump", dest="bump_type", metavar="BUMP",
-  choices=BUMP_TYPES, help="""version bump type to increment. must be
+  "--bump", dest="bump_type", choices=BUMP_TYPES,
+  help="""version bump type to increment. must be
   one of:
     major [x].x.x
     minor x.[x].x
@@ -401,36 +418,47 @@ parser.add_option(
 
 parser.add_option(
   '--skip-commit', dest='skip_commit', action='store_true',
-  metavar="SKIPCOMMIT",
-  default=False, help="skips creating a git tag at the current HEAD.")
+  default=False, help="skips creating a git tag at the current HEAD")
 
 parser.add_option(
-  '--skip-tag', dest='skip_tag', action='store_true', metavar="SKIPTAG",
-  default=False, help="skips creating a git tag at the current HEAD.")
+  '--skip-tag', dest='skip_tag', action='store_true',
+  default=False, help="skips creating a git tag at the current HEAD")
 
 parser.add_option(
-  '--skip-push', dest='skip_push', action='store_true', metavar="SKIPPUSH",
-  default=False, help="skips pushing to the remote origin.")
+  '--skip-push', dest='skip_push', action='store_true',
+  default=False, help="skips pushing to the remote origin")
 
 parser.add_option(
-  '--build', dest='build', action='store_true', help="build "
-  "the release and upload to the python package index.")
+  '--pypi_distribute', dest='pypi_distribute', action='store_true',
+  help="build the release and upload to the python package index "
+  "[https://pypi.python.org]")
+
+# todo: implement message formats as cli options..
+# https://github.com/gregorynicholas/keybump/issues/5
+
+parser.add_option(
+  '--changelog-file', dest='changelog_file', default=CHANGELOG_FILE, help="")
+
+parser.add_option(
+  '--changelog-fmt', dest='changelog_fmt', default=CHANGELOG_FMT, help="")
+
+parser.add_option(
+  '--git-commit-fmt', dest='git_commit_fmt', default=COMMIT_MSG_FMT, help="")
+
+parser.add_option(
+  '--git-tag-fmt', dest='git_tag_fmt', default=TAG_MSG_FMT, help="")
 
 
 def main():
   (options, args) = parser.parse_args()
-
-  if options.build:
-    build_and_upload()
-    info("build released and uploaded..")
-    exit(0)
 
   tags = get_git_tags()
   # what ro do on first time run? no tags yet..
   if len(tags) < 1:
     fail("""create a tag for version: 0.0.0 and try again.. sorry, we're
 still ghetto riggin this script along..""")
-    # todo
+    # todo: implement condition for new project without tags / version.
+    # https://github.com/gregorynicholas/keybump/issues/2
 
   current_tag = get_current_or_last_git_tag(tags)
   last_version = "0.0.0"
@@ -476,34 +504,41 @@ creating release: {} (codename: {}, date: {})\n""",
        last_release.version, last_release.codename, last_release.date,
        new_release.version, new_release.codename, new_release.date)
 
-  # todo: setup the dev new version..
+  # todo: add optional step to add a separate [version]-dev..
+  # https://github.com/gregorynicholas/keybump/issues/3
+  # setup the dev new version..
   # dev_version = new_version + '-dev'
 
   summaries = get_changelog_summaries_since(current_tag)
   new_release.set_summaries(summaries)
-  changelog = bump_changelog(new_release)
+  changelog_summary = bump_changelog(new_release)
 
-  # todo: present string to user to customize before continuing..
+  # todo: add inline changelog summary editing..
+  # https://github.com/gregorynicholas/keybump/issues/4
+  # present string to user to customize before continuing..
   # if not options.skip_interactive:
-  #   readline.set_startup_hook(lambda: readline.insert_text(changelog))
-  #   changelog = raw_input(BANNER)
+  #   readline.set_startup_hook(
+  #     lambda: readline.insert_text(changelog_summary))
+  #   changelog_summary = raw_input(BANNER)
 
   if not options.skip_interactive:
     raw_input("""========================================================
 review + edit your CHANGES.md changelog summary. when you
 are finished, press any key here to continue..
 """)
-  prepend_changelog(changelog)
+  prepend_changelog(changelog_summary)
 
-  # todo
+  # todo: add as optional step to set python __init__.py version..
   # set_init_version(new_version)
+
+  # todo: add as optional step to set python setup.py version..
   # set_setup_version(new_version)
 
   if not options.skip_commit:
-    make_git_commit(new_release.version_msg)
+    make_git_commit(new_release.tag_msg)
 
   if not options.skip_tag:
-    make_git_tag(new_release.version_msg, new_release.version)
+    make_git_tag(new_release.tag_msg, new_release.version)
 
   if not options.skip_push:
     push_to_remote()
@@ -511,7 +546,14 @@ are finished, press any key here to continue..
   info("""
 ========================================================
 release complete: {}.
-""".format(new_release.version_msg))
+""".format(new_release.tag_msg))
+
+  # optional releases..
+
+  if options.pypi_distribute:
+    setup_py_distribute()
+    info("version built + released and uploaded to python package index..")
+
   exit(0)
 
 

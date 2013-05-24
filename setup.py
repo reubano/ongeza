@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 keybump
------------------------
+-------
 
 helper script to perform a project release, and follow the semantic
 versioning specification.
@@ -23,12 +23,11 @@ setup(
   url='http://github.com/gregorynicholas/keybump',
   license='MIT',
   author='gregorynicholas',
-  description='Helper script to perform a project release, and follow the \
-Semantic Versioning Specification.',
+  description='helper script to perform a project release, and follow the \
+semantic versioning specification.',
   long_description=__doc__,
   scripts=['keybump'],
   py_modules=[],
-  # packages=['flaskext'],
   zip_safe=False,
   platforms='any',
   install_requires=[
