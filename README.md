@@ -1,101 +1,96 @@
 keybump
-===========
+=======
 
-Introduction
-------------
 
-keybump makes following the `Semantic Versioning Specification http://semver.org/>`_ a breeze. If called with no options, keybump will print the script's current git tag version. It has been tested on the following configuration:
+### introduction
 
-* MacOS X 10.7.4
-* Python 2.7.3
+keybump makes following the [semantic versioning specification](http://semver.org/)
+a breeze. if called with no options, keybump will print the script's current
+git tag version.
 
-Requirements
-------------
+it has been tested on the following configuration:
+
+* macosx *10.7.6*
+* python *2.7.1*
+
+
+-----
+
+
+### requirements
 
 keybump requires the following in order to run properly:
 
-* `python >= 2.5 <http://www.python.org/download>`_
-* `git >= 1.8 <http://www.python.org/download>`_
-
-Preparation
------------
-
-Check that the correct version of Python is installed
-
-  python -V
-
-Installation (not yet implemented)
-------------
-
-Install keybump using either pip (recommended)
-
-  sudo pip install keybump
-
-or easy_install
-
-  sudo easy_install keybump
-
-Using keybump
------------------
-
-Usage
-^^^^^
-
-  keybump [options] <dir>
+* [python >= *2.5*](http://python.org)
+* [git >= *1.8*](http://git-scm.org)
 
 
-Examples
-^^^^^^^^
+-----
+
+
+### preparation
+
+check that the correct version of git + python are installed
+
+    $ python --version
+    $ git --version
+
+-----
+
+
+### installation
+
+install keybump with pip (recommended to lock in the version)
+
+    $ pip install keybump==3.0.0
+
+-----
+
+### usage
+
+    $ keybump [options]
+
+options:
+
+    --bump                  version bump type to increment. must be  one of:
+                              major [x].x.x     minor x.[x].x     patch x.x.[x]
+    --skip-interactive      skips the script from using the interactive command line interface
+    --skip-commit           skips commiting any changes to the changelog file
+    --skip-tag              skips creating a git tag at the current HEAD
+    --skip-push             skips pushing to the remote origin
+    --pypi_distribute       build the release and upload to the python package index
+    --changelog-file        path to a changelog history file
+    --changelog-fmt         string format of the changelog version summary
+    --git-commit-fmt        string format of the git commit message
+    --git-tag-fmt           string format of the git tag
+    --help                  show this help message and exit
+
+
+#### examples
 
 *normal usage*
 
-  keybump -tn /path/to/git/repo
+    $ keybump --bump patch
 
 *view current version*
 
-  keybump /path/to/git/repo
-
-*add new tag*
-
-  keybump -gtn /path/to/git/repo
-
-*manually set version*
-
-  keybump -s 1.0.2  /path/to/git/repo
+    $ keybump
 
 
-Options
-^^^^^^^
+-----
 
-    -h, --help      show this help message and exit
-    --b --bump      {major ,minor, patch}
-                    version bump type:
-                      major:  [x].x.x
-                      minor:  x.[x].x
-                      patch:  x.x.[x]
 
-    -s SET, --set SET     set arbitrary version number
-    -p PATTERN, --pattern PATTERN
-              search pattern when setting arbitrary version number
-    -v, --verbose         increase output verbosity
-    -g, --tag             tag git repo with the bumped version number
-
-Arguments
-^^^^^^^^^
-
-+---------+-------------------------------+
-| dir     |  the project directory        |
-+---------+-------------------------------+
-
-LIMITATIONS
------------
+### limitations
 
 * no built-in support for pre-release or build numbers
   - 1.0.0-alpha, 1.0.0-alpha.1, 1.0.0-0.3.7, 1.0.0-x.7.z.92
   - 1.0.0+build.1, 1.3.7+build.11.e0f985a
 * doesn't check validity of user set versions
 
-LICENSE
--------
 
-keybump is distributed under the `MIT License <http://opensource.org/licenses/mit-license.php>`_.
+-----
+
+
+### license
+
+keybump is distributed under the [MIT License](http://opensource.org/licenses/mit-license.php)
