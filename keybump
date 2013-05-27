@@ -11,17 +11,18 @@
 """
 import re
 import sys
+import subprocess
 from sys import exit
 from optparse import OptionParser
 from datetime import datetime
-from subprocess import Popen, PIPE
+from subprocess import PIPE, STDOUT
 
 
 SEP = '-'
-CHANGELOG_FILE = 'CHANGES.md'
-TAG_MSG_FMT = "Version bumped to {}"
-COMMIT_MSG_FMT = "Version bumped to {}"
-CHANGELOG_FMT = """
+DEFAULT_CHANGELOG_FILE = 'CHANGES.md'
+DEFAULT_TAG_MSG_FMT = "Version bumped to {}"
+DEFAULT_COMMIT_MSG_FMT = "Version bumped to {}"
+DEFAULT_CHANGELOG_FMT = """
 Version {{version}}
 ----------------------
 
@@ -38,6 +39,14 @@ BANNER = """
 edit the changelog summaries. press <enter> to complete:
 ========================================================
 """
+INFO_FMT = """project version information:
+
+  latest tag:   {}
+  current tag:  {}
+  version id:   {}"""
+
+version_reg = re.compile('^Version\s+(.*)')
+release_reg = re.compile('Released on (\d+-\d+-\d+)(?:, codename (.*))?(?i)')
 
 
 class Release(object):
@@ -45,7 +54,8 @@ class Release(object):
   object representing a version release.
   """
 
-  def __init__(self, version=None, date=None, codename=None, summaries=None):
+  def __init__(self, version=None, date=None, codename=None, summaries=None,
+               changelog_fmt=None, tag_msg_fmt=None):
     """
       :param version: string version in the format: [x].[x].[x]
     """
@@ -53,14 +63,17 @@ class Release(object):
     self.date = self.parse_datestr(date or today_str())
     self.codename = codename
     self.set_summaries(summaries or [])
+    self.changelog_fmt = changelog_fmt or DEFAULT_CHANGELOG_FMT
+    self.tag_msg_fmt = tag_msg_fmt or DEFAULT_TAG_MSG_FMT
+    self.summaryitem_fmt = "\n    * "
 
   @property
   def tag_msg(self):
-    return TAG_MSG_FMT.format(self.version)
+    return self.tag_msg_fmt.format(self.version)
 
   @property
   def commit_msg(self):
-    return COMMIT_MSG_FMT.format(self.version)
+    return self.changelog_fmt.format(self.version)
 
   @property
   def date_msg(self):
@@ -84,7 +97,10 @@ class Release(object):
     """
     MIN_SUMMARY_LENGTH = 10
     for line in summaries:
-      if line.startswith('Merge branch '):
+      # merge commits..
+      if line.startswith('Merge branch'):
+        summaries.remove(line)
+      elif line.startswith('Merge pull request'):
         summaries.remove(line)
       elif line == 'whitespace.':
         summaries.remove(line)
@@ -95,10 +111,8 @@ class Release(object):
   def bump_num(self, version, bump_type=PATCH_BUMP):
     """
       :param bump_type:
-        Version bump type. Can be one of:
-          MAJOR_BUMP    major  ([x].0.0)
-          MINOR_BUMP    minor  (x.[x].0)
-          PATCH_BUMP    patch  (x.x.[x])
+        version bump type. one of:
+          major  [x].0.0    minor  x.[x].0    patch  x.x.[x]
       :returns:
     """
     try:
@@ -108,71 +122,60 @@ class Release(object):
         'patch': lambda: [version[0], version[1], version[2] + 1]}
       return '.'.join(map(str, switch.get(bump_type)()))
     except ValueError:
-      fail('version string is not numeric..')
+      fail("version string is not numeric..")
 
   def bump(self, bump_type=PATCH_BUMP):
     self.version = self.bump_num(
       [int(v) for v in self.version.split('.')], bump_type)
 
+  def bump_changelog(self):
+    """
+      :param version: string name of the new version to bump to.
+    """
+    rv = self.changelog_fmt.replace("{{version}}", self.version)
+    rv = rv.replace("{{date}}", self.date_msg)
+    rv = rv.replace(
+      "{{summaries}}",
+      "    * " + self.summaryitem_fmt.join(self.summaries))
+    return rv
+
 
 _date_clean_re = re.compile(r'(\d+)(st|nd|rd|th)')
 
 
-def fail(message, *args):
-  print >> sys.stderr, 'error:', message.format(*args)
-  exit(1)
-
-
-def info(message, *args):
-  print >> sys.stdout, message.format(*args)
-  # print >> sys.stderr, message % args
-
-
-def _call(*args, **kwargs):
-  return Popen(args, **kwargs).wait()
+def today_str():
+  return datetime.now().strftime('%Y-%m-%d')
 
 
 def get_changelog_summaries_since(last_tag):
-  sep = "-------------------"
-  cmd = [
-    "git", "log", "--no-merges",
-    "--pretty=%B{}".format(sep), "{}..".format(last_tag)]
-  rv, err = Popen(cmd, stdout=PIPE).communicate()
+  """
+    :param last_tag:
+    :returns:
+  """
+  sep = "__||__"
+  rv = sh("git log --no-merges --pretty=%B{} {}..".format(sep, last_tag))
   return [x.strip() for x in rv.split(sep)]
 
 
-def bump_changelog(release):
-  """
-    :param version: string name of the new version to bump to.
-  """
-  SUMMARY_FMT = "\n    * "
-  rv = CHANGELOG_FMT.replace("{{version}}", release.version)
-  rv = rv.replace("{{date}}", release.date_msg)
-  rv = rv.replace(
-    "{{summaries}}",
-    "    * " + SUMMARY_FMT.join(release.summaries))
-  return rv
-
-
-def prepend_changelog(data):
+def prepend_changelog(path, data):
   contents = ""
-  with open(CHANGELOG_FILE, 'r') as f:
+  with open(path, 'r') as f:
     if isinstance(data, basestring):
-      contents = f.read()
+      contents = data + "\n" + f.read()
     else:
       contents = f.readlines()
-  write_changelog(data + "\n" + contents)
+  write_changelog(path, contents)
 
 
-def write_changelog(data):
-  with open(CHANGELOG_FILE, 'w') as f:
+def write_changelog(path, data):
+  with open(path, 'w') as f:
     if isinstance(data, basestring):
       f.write(data)
     else:
       f.writelines(data)
 
 
-def parse_changelog(last_tag, last_version):
+def parse_changelog(changelog_file, last_tag, last_version):
   """
   parses the contents of the changelog file.
 
@@ -180,31 +183,28 @@ def parse_changelog(last_tag, last_version):
     :param last_version:
     :returns: instance of a `Release` object.
   """
-  with open(CHANGELOG_FILE) as f:
+  with open(changelog_file) as f:
     lineiter = iter(f)
     for line in lineiter:
-      # find the latest version header..
-      match = re.search('^Version\s+(.*)', line.strip())
-      if match is None:
+
+      # parse the last version..
+      ver_match = version_reg.search(line.strip())
+      if ver_match is None:
         continue
-      version = match.group(1).strip()
+      version = ver_match.group(1).strip()
       value = lineiter.next()
       if not value.count(SEP):
         continue
+
       # parse the release data and codename..
       while 1:
-        change_info = lineiter.next().strip()
-        if change_info:
+        changelog_summary = lineiter.next().strip()
+        if changelog_summary:
           break
-
-      reg = re.compile('Released on (\d+-\d+-\d+)(?:, codename (.*))?(?i)')
-      match = reg.search(change_info)
-      if match is None:
+      rel_match = release_reg.search(changelog_summary)
+      if rel_match is None:
         continue
-
-      # datestr = match.groups()
-      datestr, codename = match.groups()
-      # info('change_info: datestr: {}, codename: {}', datestr, codename)
+      datestr, codename = rel_match.groups()
 
       # parse the change summary messages..
       summaries = []
@@ -214,31 +214,30 @@ def parse_changelog(last_tag, last_version):
           summaries.append(summary)
         else:
           break
-      return Release(version, datestr, codename, summaries)
+
+      return Release(
+        version, datestr, codename, summaries)
     # no result was returned.. see if it's because the file was empty..
     if (len(f.read().strip()) > 1):
       fail("unable to parse the change log contents.. verify it's in the "
            "correct format.")
 
 
-def set_default_changelog(version):
+def set_default_changelog(changelog_fmt, version):
   dt = today_str()
-  contents = CHANGELOG_FMT.replace('{{date}}', dt)
+  contents = changelog_fmt.replace('{{date}}', dt)
   contents = contents.replace('{{version}}', version)
   contents = contents.replace('{{summaries}}', "  * initial version")
   write_changelog(contents)
-  return Release(version, dt, None, [])
-
-
-def today_str():
-  return datetime.now().strftime('%Y-%m-%d')
+  return Release(
+    version, dt, None, [])
 
 
 # git helpers..
 
+
 def get_current_git_tag():
-  tag, err = Popen(
-    ['git', 'describe'], stdout=PIPE, stderr=PIPE).communicate()
+  tag = sh("git describe")
   return tag.strip()
 
 
@@ -260,28 +259,23 @@ def get_git_tags():
     :returns:
       list of git tags, sorted by the date of the commit it points to.
   """
-  cmd = "git for-each-ref --format='%(tag)' refs/tags"
-  # cmd = "git for-each-ref --format='%(tag)' refs/tags"
-  tags, err = Popen(cmd.split(' '), stdout=PIPE, stderr=PIPE).communicate()
-  if err and len(err) > 0:
-    fail('unable to get list of git tags: {}..', err)
+  tags = sh("git for-each-ref --format='%(tag)' refs/tags")
   # strips single quotes that for some reason are carrying over..
-  return [x[1:-1] for x in tags.splitlines()]
+  return [x for x in tags.splitlines()]
 
 
 def git_is_clean():
   """
     :returns: boolean if there is a dirty index.
   """
-  return _call('git', 'diff', '--quiet') == 0
+  return str(sh('git diff --quiet')) == "0"
 
 
 def git_diff_files():
   """
     :returns: list of string names of the files that are dirty.
   """
-  files, err = Popen(
-    ['git', 'diff', '--minimal', '--numstat'], stdout=PIPE).communicate()
+  files = sh("git diff --minimal --numstat")
   return [x.split('\t')[-1] for x in files.splitlines()]
 
 
@@ -290,23 +284,23 @@ def git_checkout(id):
     :param id: string identifier of the commit'ish to checkout.
   """
   info('checking out: "{}"', id)
-  return _call('git', 'checkout', id)
+  sh("git checkout {}".format(id))
 
 
 def git_stash():
   """
   stashes current changes.
   """
-  return _call('git', 'stash')
+  sh("git stash", capture=False)
 
 
-def make_git_commit(message):
+def make_git_commit(changelog_file, message):
   """
     :param message: string message for the commit.
   """
   info('making git commit: "{}"', message)
-  _call('git', 'add', CHANGELOG_FILE)
-  _call('git', 'commit', '-am', message)
+  sh("git add {} && git commit -am {}".format(
+    changelog_file, message), capture=False)
 
 
 def make_git_tag(msg, tag_name):
@@ -314,15 +308,15 @@ def make_git_tag(msg, tag_name):
     :param tag_name: string name for the tag.
   """
   info('making git tag: "{}"', tag_name)
-  _call('git', 'tag', tag_name, '-m', msg)
+  sh("git tag {} -m {}".format(tag_name, msg))
 
 
 def push_to_remote():
   """
-  pushes branch and tags to remote.
+  pushes current branch and tags to remote.
   """
-  _call('git', 'push')
-  _call('git', 'push', '--tags')
+  # don't call --all here on purpose..
+  sh("git push && git push --tags", capture=False)
 
 
 def ensure_clean_index(options):
@@ -339,7 +333,7 @@ do something to the following files:
   # clean the index..
   info(msg)
   do_stash = raw_input(
-    "want keybump to snort -achem stash- your changes? "
+    "want keybump to snort ..achem stash.. your changes? "
     "[Y / n]: ").upper()
   if do_stash != "Y":
     pass  # fail("cannot continue with dirty index..")
@@ -363,7 +357,7 @@ def set_version_in_file(filename, version_number, pattern):
     changed.append(True)
     return before + version_number + after
 
-  with open(filename) as f:
+  with open(filename, 'r') as f:
     contents = re.sub(
       r"^(\s*%s\s*=\s*')(.+?)(')(?sm)" % pattern, inject_version, f.read())
   if len(changed) < 1:
@@ -391,10 +385,63 @@ def set_setup_py_version(version):
 
 
 def setup_py_distribute():
-  _call(sys.executable, 'setup.py', 'sdist', 'upload')
+  sh("setup.py clean sdist upload".format(sys.executable), capture=False)
 
 
 # cli interface..
+
+def sh(command, capture=True, ignore_error=None, cwd=None):
+  """
+  runs an external command. if `capture=True`, the output of the command will
+  be captured and returned as a string.
+
+  if the command has a non-zero return code raise a buildfailure. you can pass
+  `ignore_error=True` to allow non-zero return codes to be allowed to pass
+  silently, silently into the night. passing `cwd='some/path'` will chdir to
+  'some/path' before exectuting the command.
+  """
+  # if capture is true, then set ignore_error to true by default.
+  # otherwise, ignore_error defaults to false.
+  if capture and ignore_error is None:
+    ignore_error = True
+
+  def runpipe():
+    kwargs = {"shell": True, "cwd": cwd}
+    if capture:
+      kwargs["stderr"] = STDOUT
+      kwargs["stdout"] = PIPE
+    else:
+      subprocess.Popen(command, **kwargs).wait()
+      return
+    p = subprocess.Popen(command, **kwargs)
+    p_stdout = p.communicate()[0]
+    if p_stdout is not None:
+      p_stdout = p_stdout.decode(sys.getdefaultencoding())
+    if p.returncode and not ignore_error:
+      if capture and p_stdout is not None:
+        fail(p_stdout)
+      fail("command error: {}. return code: {}", command, p.returncode)
+    if capture:
+      return p_stdout
+  return runpipe()
+
+
+def fail(message, *args):
+  print >> sys.stderr, 'error:', message.format(*args)
+  exit(1)
+
+
+def info(message, *args):
+  print >> sys.stdout, message.format(*args)
+  # print >> sys.stderr, message % args
+
+
+def show_project_version_info(current_tag, last_tag, last_version):
+  """
+  prints project version information and exits without error.
+  """
+  info(INFO_FMT, last_tag, current_tag, last_version)
+  exit(0)
 
 parser = OptionParser(
   description="description: keybump makes following the semantic versioning "
@@ -402,7 +449,7 @@ parser = OptionParser(
  "if called with no options, keybump will print the current git repository's "
  "tag + version name",
   prog="keybump",
-  usage="%(prog)s [options]")
+  usage="%progs [options]")
 
 parser.add_option(
   '--skip-interactive', dest='skip_interactive', action='store_true',
@@ -430,23 +477,26 @@ parser.add_option(
 
 parser.add_option(
   '--pypi_distribute', dest='pypi_distribute', action='store_true',
-  help="build the release and upload to the python package index "
-  "[https://pypi.python.org]")
+  help="build the release and upload to the python package index")
 
 # todo: implement message formats as cli options..
 # https://github.com/gregorynicholas/keybump/issues/5
 
 parser.add_option(
-  '--changelog-file', dest='changelog_file', default=CHANGELOG_FILE, help="")
+  '--changelog-file', dest='changelog_file', default=DEFAULT_CHANGELOG_FILE,
+  help="path to the changelog history file.")
 
 parser.add_option(
-  '--changelog-fmt', dest='changelog_fmt', default=CHANGELOG_FMT, help="")
+  '--changelog-fmt', dest='changelog_fmt', default=DEFAULT_CHANGELOG_FMT,
+  help="string format of the changelog version summary")
 
 parser.add_option(
-  '--git-commit-fmt', dest='git_commit_fmt', default=COMMIT_MSG_FMT, help="")
+  '--git-commit-fmt', dest='git_commit_fmt', default=DEFAULT_COMMIT_MSG_FMT,
+  help="string format of the git commit message")
 
 parser.add_option(
-  '--git-tag-fmt', dest='git_tag_fmt', default=TAG_MSG_FMT, help="")
+  '--git-tag-fmt', dest='git_tag_fmt', default=DEFAULT_TAG_MSG_FMT,
+  help="string format of the git tag")
 
 
 def main():
@@ -461,34 +511,33 @@ still ghetto riggin this script along..""")
     # https://github.com/gregorynicholas/keybump/issues/2
 
   current_tag = get_current_or_last_git_tag(tags)
+  last_tag = tags[-1]
   last_version = "0.0.0"
   if len(current_tag) > 0:
     non_decimal = re.compile(r'[^\d.]+')
     last_version = non_decimal.sub('', current_tag)
 
   if not options.bump_type:
-    info("""version information:
-
-  latest tag:   {}
-  current tag:  {}
-  version id:   {}""", tags[-1], current_tag, last_version)
-    # exit without error..
-    exit(0)
+    show_project_version_info(
+      current_tag, last_tag, last_version)
 
   ensure_clean_index(options)
-  last_release = parse_changelog(current_tag, last_version)
+  last_release = parse_changelog(
+    options.changelog_file, current_tag, last_version)
   if last_release is None:
-    msg = "could not parse release from changelog history in CHANGES.md."
+    msg = "could not parse release from changelog history in {}.".format(
+      options.changelog_file)
     if not options.skip_interactive:
       # set to initial version..
       info(msg)
       set_initial = raw_input("""
 that's beacuse the file is empty. want keybump to
 "setup the initial file?  [Y / n]: """).upper()
-      if set_initial.upper() != "Y":
+      if set_initial != "Y":
         fail(msg)
       info("\nok, you asked for it..\n")
-      last_release = set_default_changelog(last_version)
+      last_release = set_default_changelog(
+        options.changelog_fmt, last_version)
     else:
       fail(msg)
 
@@ -511,7 +560,7 @@ creating release: {} (codename: {}, date: {})\n""",
 
   summaries = get_changelog_summaries_since(current_tag)
   new_release.set_summaries(summaries)
-  changelog_summary = bump_changelog(new_release)
+  changelog_summary = new_release.bump_changelog()
 
   # todo: add inline changelog summary editing..
   # https://github.com/gregorynicholas/keybump/issues/4
@@ -526,7 +575,7 @@ creating release: {} (codename: {}, date: {})\n""",
 review + edit your CHANGES.md changelog summary. when you
 are finished, press any key here to continue..
 """)
-  prepend_changelog(changelog_summary)
+  prepend_changelog(options.changelog_file, changelog_summary)
 
   # todo: add as optional step to set python __init__.py version..
   # set_init_version(new_version)
@@ -535,7 +584,7 @@ are finished, press any key here to continue..
   # set_setup_version(new_version)
 
   if not options.skip_commit:
-    make_git_commit(new_release.tag_msg)
+    make_git_commit(options.changelog_file, new_release.tag_msg)
 
   if not options.skip_tag:
     make_git_tag(new_release.tag_msg, new_release.version)
@@ -548,7 +597,7 @@ are finished, press any key here to continue..
 release complete: {}.
 """.format(new_release.tag_msg))
 
-  # optional releases..
+  # optional pypi releases..
 
   if options.pypi_distribute:
     setup_py_distribute()
