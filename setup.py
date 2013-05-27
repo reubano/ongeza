@@ -6,16 +6,20 @@ keybump
 helper script to perform a project release, and follow the semantic
 versioning specification.
 
-Links
+links
 `````
 
-* `documentation <http://packages.python.org/keybump>`_
-* `semantic versioning specification <http://semver.org/>`_
-* `development version
-  <http://github.com/gregorynicholas/keybump/zipball/master#egg=keybump-dev>`_
+* [documentation](http://packages.python.org/keybump)
+* [semantic versioning specification](http://semver.org)
+* [development version]
+  (http://github.com/gregorynicholas/keybump/zipball/master#egg=keybump-dev)
 
 """
 from setuptools import setup
+
+# grab requirments.
+with open('requirements.txt') as f:
+  required = f.readlines()
 
 setup(
   name='keybump',
@@ -27,11 +31,9 @@ setup(
 semantic versioning specification.',
   long_description=__doc__,
   scripts=['keybump'],
-  py_modules=[],
   zip_safe=False,
   platforms='any',
-  install_requires=[
-  ],
+  install_requires=required,
   tests_require=[
     # 'nose',
   ],
@@ -39,12 +41,12 @@ semantic versioning specification.',
   ],
   # test_suite='nose.collector',
   classifiers=[
-    'Development Status :: 4 - Beta',
     'Environment :: Web Environment',
     'Intended Audience :: Developers',
     'License :: OSI Approved :: MIT License',
     'Operating System :: OS Independent',
     'Programming Language :: Python',
+    'Programming Language :: Python :: 2.7',
     'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
     'Topic :: Software Development :: Libraries :: Python Modules'
   ]
