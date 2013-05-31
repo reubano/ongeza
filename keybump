@@ -11,10 +11,10 @@
 """
 import re
 import sys
-import subprocess
 from sys import exit
 from optparse import OptionParser
 from datetime import datetime
+from subprocess import Popen
 from subprocess import PIPE, STDOUT
 
 
@@ -89,22 +89,27 @@ class Release(object):
     return datetime.strptime(datestr, '%Y-%m-%d')
 
   def set_summaries(self, summaries):
-    self.summaries = self.clean_commit_summaries(summaries)
+    self.summaries = self.format_summary_items(summaries)
 
-  def clean_commit_summaries(self, summaries):
+  def format_summary_items(self, summaries):
     """
-    cleans up summaries. removes merge commit messages.
+    cleans summary lines of text. removes merge commit messages.
+
+      :returns:
     """
     MIN_SUMMARY_LENGTH = 10
+    SKIP_PREFIXES = ['MERGE BRANCH', 'MERGE PULL REQUEST']
+    SKIP_EQUALITY = ['WHITESPACE']
     for line in summaries:
       # merge commits..
-      if line.startswith('Merge branch'):
-        summaries.remove(line)
-      elif line.startswith('Merge pull request'):
-        summaries.remove(line)
-      elif line == 'whitespace.':
-        summaries.remove(line)
-      elif len(line) < MIN_SUMMARY_LENGTH:
+      lu = line.upper()
+      for skip in SKIP_PREFIXES:
+        if lu.startswith(skip):
+          summaries.remove(line)
+      for skip in SKIP_EQUALITY:
+        if lu == skip:
+          summaries.remove(line)
+      if len(line) < MIN_SUMMARY_LENGTH:
         summaries.remove(line)
     return summaries
 
@@ -113,7 +118,7 @@ class Release(object):
       :param bump_type:
         version bump type. one of:
           major  [x].0.0    minor  x.[x].0    patch  x.x.[x]
-      :returns:
+      :returns: string of the incremented version name.
     """
     try:
       switch = {
@@ -131,6 +136,7 @@ class Release(object):
   def bump_changelog(self):
     """
       :param version: string name of the new version to bump to.
+      :returns: string
     """
     rv = self.changelog_fmt.replace("{{version}}", self.version)
     rv = rv.replace("{{date}}", self.date_msg)
@@ -411,9 +417,9 @@ def sh(command, capture=True, ignore_error=None, cwd=None):
       kwargs["stderr"] = STDOUT
       kwargs["stdout"] = PIPE
     else:
-      subprocess.Popen(command, **kwargs).wait()
+      Popen(command, **kwargs).wait()
       return
-    p = subprocess.Popen(command, **kwargs)
+    p = Popen(command, **kwargs)
     p_stdout = p.communicate()[0]
     if p_stdout is not None:
       p_stdout = p_stdout.decode(sys.getdefaultencoding())
