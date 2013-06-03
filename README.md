@@ -63,7 +63,6 @@ options:
     --changelog-fmt         string format of the changelog version summary
     --git-commit-fmt        string format of the git commit message
     --git-tag-fmt           string format of the git tag
-    --help                  show this help message and exit
 
 
 #### examples
@@ -72,7 +71,7 @@ options:
 
     $ keybump --bump patch
 
-*view current version*
+*view current project version*
 
     $ keybump
 
