@@ -18,8 +18,8 @@ from subprocess import Popen
 from subprocess import PIPE, STDOUT
 
 
-SEP = '-'
-DEFAULT_CHANGELOG_FILE = 'CHANGES.md'
+SUMMARY_SEPARATOR = "-"
+DEFAULT_CHANGELOG_FILE = "CHANGES.md"
 DEFAULT_TAG_MSG_FMT = "Version bumped to {}"
 DEFAULT_COMMIT_MSG_FMT = "Version bumped to {}"
 DEFAULT_CHANGELOG_FMT = """
@@ -46,7 +46,193 @@ INFO_FMT = """project version information:
   version id:   {}"""
 
 version_reg = re.compile('^Version\s+(.*)')
-release_reg = re.compile('Released on (\d+-\d+-\d+)(?:, codename (.*))?(?i)')
+release_header_reg = re.compile(
+  'Released on (\d+-\d+-\d+)(?:, codename (.*))?(?i)')
+
+
+class BaseSummaryFormatter(object):
+  """
+  base class for a commit summary formatter.
+  """
+
+
+class SummaryFormatter(BaseSummaryFormatter):
+  """
+  commit summary formatter.
+  """
+
+
+class Project(object):
+  """
+  """
+
+  def __init__(self, changelog_file, skip_interactive):
+    """
+      :param changelog_file:
+      :param skip_interactive:
+    """
+    self.changelog_file = changelog_file
+    self.skip_interactive = skip_interactive
+    self.releases = []
+    self.tags = []
+    self.current_tag = None
+    self.last_version_num = "0.0.0"
+
+  @property
+  def last_release(self):
+    return self.releases[-1]
+
+  @property
+  def last_tag(self):
+    return self.tags[-1]
+
+  def parse_git_tags(self):
+    """
+    sets the git tags and current repo index git tag.
+    """
+    self.tags = get_git_tags()
+    # what to do on first time run? no tags yet..
+    if len(self.tags) < 1:
+      fail("""create a tag for version: 0.0.0 and try again.. sorry, we're
+  still ghetto-riggin this script along.. workin on it..""")
+      # todo: implement condition for new project without tags / version.
+      # https://github.com/gregorynicholas/keybump/issues/2
+    self.current_tag = self._current_or_last_git_tag()
+
+  def _current_or_last_git_tag(self):
+    """
+      :returns: string name of the current or last git tag.
+    """
+    current_tag = get_current_git_tag()
+    if current_tag not in self.tags:
+      # describe makes up it's own tag names, so make sure we have a real tag
+      # to build from, else we're fucked.
+      current_tag = self.last_tag
+    return current_tag
+
+  def parse_versions(self):
+    if not self.current_tag or len(self.current_tag) < 1:
+      return
+    non_decimal = re.compile(r'[^\d.]+')
+    self.last_version_num = non_decimal.sub('', self.current_tag)
+
+  def parse_releases(self):
+    """
+    sets the releases.
+    """
+    releases = self.parse_changelog_releases()
+    if len(releases) < 1:
+      self.setup_initial_release()
+
+  def parse_changelog_releases(self):
+    """
+    parses the contents of the changelog file, and returns a `Release` object
+    from the latest changelog summary.
+
+      :returns: list of instance of a `Release` objects.
+    """
+    result = []
+    with open(self.changelog_file) as f:
+      lineiter = iter(f)
+      for line in lineiter:
+
+        # parse the last version..
+        ver_match = version_reg.search(line.strip())
+        if ver_match is None:
+          continue
+        version_num = ver_match.group(1).strip()
+        value = lineiter.next()
+        if not value.count(SUMMARY_SEPARATOR):
+          continue
+
+        # parse the release data and codename..
+        while 1:
+          release_header = lineiter.next().strip()
+          if release_header:
+            break
+        rel_match = release_header_reg.search(release_header)
+        if rel_match is None:
+          continue
+        datestr, codename = rel_match.groups()
+
+        # parse the change summary messages..
+        summaries = []
+        while 1:
+          summary = lineiter.next().strip()
+          if summary:
+            summaries.append(summary)
+          else:
+            break
+
+        result.append(Release(
+          version_num, datestr, codename, summaries))
+
+      # no result was returned.. see if it's because the file was empty..
+      if (len(f.read().strip()) > 1):
+        fail("unable to parse the change log contents.. "
+             "verify it's in the correct format.")
+
+      return result
+
+  def setup_initial_release(self):
+    """
+    """
+    msg = "could not parse release from changelog history in {}.".format(
+      self.changelog_file)
+    # fail and exit..
+    if self.skip_interactive:
+      fail(msg)
+    # don't fail, set to initial version..
+    info(msg)
+    set_initial = raw_input("""
+  that's beacuse the file is empty. want keybump to
+  setup the initial file?  [Y / n]: """).upper()
+    if set_initial != "Y":
+      fail(msg)
+    info("""
+  ok, you asked for it..
+    """)
+    rel = self.create_initial_release(self.last_version_num)
+    self.releases.append(rel)
+
+  def create_initial_release(self, version_num):
+    dt = today_str()
+    contents = self.changelog_fmt.replace('{{date}}', dt)
+    contents = contents.replace('{{version}}', version_num)
+    contents = contents.replace('{{summaries}}', "  * initial version")
+    write(self.changelog_file, contents)
+    return Release(version_num, dt, None, [])
+
+  def prepend_changelog(self, data):
+    contents = ""
+    with open(self.changelog_file, 'r') as f:
+      if isinstance(data, basestring):
+        contents = data + "\n" + f.read()
+      else:
+        contents = f.readlines()
+    write(self.changelog_file, contents)
+
+  def new_release(self):
+    """
+      :returns: instance of a `Release` object.
+    """
+    release = Release(
+      self.last_release.version_num, today_str(), self.last_release.codename)
+    release.bump()
+    if release.version_num in self.tags:
+      fail("version `{}` is already tagged", release.version_num)
+    summaries = self.get_changelog_summaries_since(self.current_tag)
+    release.set_summaries(summaries)
+    return release
+
+  def get_changelog_summaries_since(self, last_tag):
+    """
+      :param last_tag:
+      :returns:
+    """
+    sep = "__||__"
+    rv = sh("git log --no-merges --pretty=%B{} {}..".format(sep, last_tag))
+    return [x.strip() for x in rv.split(sep)]
 
 
 class Release(object):
@@ -54,13 +240,13 @@ class Release(object):
   object representing a version release.
   """
 
-  def __init__(self, version=None, date=None, codename=None, summaries=None,
-               changelog_fmt=None, tag_msg_fmt=None):
+  def __init__(self, version_num=None, datestr=None, codename=None,
+               summaries=None, changelog_fmt=None, tag_msg_fmt=None):
     """
-      :param version: string version in the format: [x].[x].[x]
+      :param version_num: string version in the format: [x].[x].[x]
     """
-    self.version = version or "0.0.0"
-    self.date = self.parse_datestr(date or today_str())
+    self.version_num = version_num or "0.0.0"
+    self.set_date(datestr)
     self.codename = codename
     self.set_summaries(summaries or [])
     self.changelog_fmt = changelog_fmt or DEFAULT_CHANGELOG_FMT
@@ -69,23 +255,29 @@ class Release(object):
 
   @property
   def tag_msg(self):
-    return self.tag_msg_fmt.format(self.version)
+    return self.tag_msg_fmt.format(self.version_num)
 
   @property
   def commit_msg(self):
-    return self.changelog_fmt.format(self.version)
+    return self.changelog_fmt.format(self.version_num)
 
   @property
-  def date_msg(self):
+  def datestr(self):
     return self.date.strftime('%Y-%m-%d')
 
-  def parse_datestr(self, datestr):
+  def set_date(self, datestr=None):
+    """
+      :param datestr: string date in the format: %Y-%m-%d. defaults to today.
+    """
+    self.date = self._parse_datestr(datestr or today_str())
+
+  def _parse_datestr(self, datestr):
     """
       :param datestr: string date in the format: %Y-%m-%d
       :returns: `datetime.date` object parsed from the datestr param.
     """
-    datestr = _date_clean_re.sub(r'\1', datestr)
-    # return datetime.strptime(datestr, '%B %d %Y')
+    date_clean_re = re.compile(r'(\d+)(st|nd|rd|th)')
+    datestr = date_clean_re.sub(r'\1', datestr)
     return datetime.strptime(datestr, '%Y-%m-%d')
 
   def set_summaries(self, summaries):
@@ -113,67 +305,43 @@ class Release(object):
         summaries.remove(line)
     return summaries
 
-  def bump_num(self, version, bump_type=PATCH_BUMP):
+  def _bump_num(self, version_num, bump_type=PATCH_BUMP):
     """
-      :param bump_type:
-        version bump type. one of:
+      :param version_num: string version name.
+      :param bump_type: version bump type. one of:
           major  [x].0.0    minor  x.[x].0    patch  x.x.[x]
-      :returns: string of the incremented version name.
+      :returns: concatenated string of the incremented version name.
     """
+    # split the version number into a list of ints..
     try:
+      version = [int(v) for v in version_num.split('.')]
       switch = {
         'major': lambda: [version[0] + 1, 0, 0],
         'minor': lambda: [version[0], version[1] + 1, 0],
         'patch': lambda: [version[0], version[1], version[2] + 1]}
       return '.'.join(map(str, switch.get(bump_type)()))
     except ValueError:
-      fail("version string is not numeric..")
+      fail("version string: {} is an invalid format..", version_num)
 
   def bump(self, bump_type=PATCH_BUMP):
-    self.version = self.bump_num(
-      [int(v) for v in self.version.split('.')], bump_type)
+    self.version_num = self._bump_num(self.version_num, bump_type)
 
-  def bump_changelog(self):
+  def get_changelog_summary(self):
     """
-      :param version: string name of the new version to bump to.
-      :returns: string
+      :returns: formatted string of the release changelog summary.
     """
-    rv = self.changelog_fmt.replace("{{version}}", self.version)
-    rv = rv.replace("{{date}}", self.date_msg)
+    rv = self.changelog_fmt.replace("{{version}}", self.version_num)
+    rv = rv.replace("{{date}}", self.datestr)
     rv = rv.replace(
       "{{summaries}}",
       "    * " + self.summaryitem_fmt.join(self.summaries))
     return rv
 
 
-_date_clean_re = re.compile(r'(\d+)(st|nd|rd|th)')
+# util helpers..
 
 
-def today_str():
-  return datetime.now().strftime('%Y-%m-%d')
-
-
-def get_changelog_summaries_since(last_tag):
-  """
-    :param last_tag:
-    :returns:
-  """
-  sep = "__||__"
-  rv = sh("git log --no-merges --pretty=%B{} {}..".format(sep, last_tag))
-  return [x.strip() for x in rv.split(sep)]
-
-
-def prepend_changelog(path, data):
-  contents = ""
-  with open(path, 'r') as f:
-    if isinstance(data, basestring):
-      contents = data + "\n" + f.read()
-    else:
-      contents = f.readlines()
-  write_changelog(path, contents)
-
-
-def write_changelog(path, data):
+def write(path, data):
   with open(path, 'w') as f:
     if isinstance(data, basestring):
       f.write(data)
@@ -181,83 +349,19 @@ def write_changelog(path, data):
       f.writelines(data)
 
 
-def parse_changelog(changelog_file, last_tag, last_version):
-  """
-  parses the contents of the changelog file.
-
-    :param last_tag:
-    :param last_version:
-    :returns: instance of a `Release` object.
-  """
-  with open(changelog_file) as f:
-    lineiter = iter(f)
-    for line in lineiter:
-
-      # parse the last version..
-      ver_match = version_reg.search(line.strip())
-      if ver_match is None:
-        continue
-      version = ver_match.group(1).strip()
-      value = lineiter.next()
-      if not value.count(SEP):
-        continue
-
-      # parse the release data and codename..
-      while 1:
-        changelog_summary = lineiter.next().strip()
-        if changelog_summary:
-          break
-      rel_match = release_reg.search(changelog_summary)
-      if rel_match is None:
-        continue
-      datestr, codename = rel_match.groups()
-
-      # parse the change summary messages..
-      summaries = []
-      while 1:
-        summary = lineiter.next().strip()
-        if summary:
-          summaries.append(summary)
-        else:
-          break
-
-      return Release(
-        version, datestr, codename, summaries)
-    # no result was returned.. see if it's because the file was empty..
-    if (len(f.read().strip()) > 1):
-      fail("unable to parse the change log contents.. verify it's in the "
-           "correct format.")
-
-
-def set_default_changelog(changelog_fmt, version):
-  dt = today_str()
-  contents = changelog_fmt.replace('{{date}}', dt)
-  contents = contents.replace('{{version}}', version)
-  contents = contents.replace('{{summaries}}', "  * initial version")
-  write_changelog(contents)
-  return Release(
-    version, dt, None, [])
+def today_str():
+  return datetime.now().strftime('%Y-%m-%d')
 
 
 # git helpers..
 
 
 def get_current_git_tag():
-  tag = sh("git describe")
-  return tag.strip()
-
-
-def get_current_or_last_git_tag(tags):
   """
-    :param tags:
-      list of git tags, sorted by the date of the commit it points to.
+    :returns: string of the current git tag on the git index, not the latest
+              tag version created.
   """
-  tag = get_current_git_tag()
-  if tag not in tags:
-    # describe makes up it's own tag names, so make sure we have a real tag
-    # to build from, else we're fucked.
-    tag = tags[-1]
-  return tag
+  return sh("git describe").strip()
 
 
 def get_git_tags():
@@ -266,8 +370,7 @@ def get_git_tags():
       list of git tags, sorted by the date of the commit it points to.
   """
   tags = sh("git for-each-ref --format='%(tag)' refs/tags")
-  # strips single quotes that for some reason are carrying over..
-  return [x for x in tags.splitlines()]
+  return tags.splitlines()
 
 
 def git_is_clean():
@@ -314,7 +417,7 @@ def make_git_tag(msg, tag_name):
     :param tag_name: string name for the tag.
   """
   info('making git tag: "{}"', tag_name)
-  sh("git tag {} -m {}".format(tag_name, msg))
+  sh("git tag {} -m {}".format(tag_name, msg), capture=False)
 
 
 def push_to_remote():
@@ -325,16 +428,20 @@ def push_to_remote():
   sh("git push && git push --tags", capture=False)
 
 
-def ensure_clean_index(options):
+def ensure_clean_index(skip_interactive=False):
+  """
+    :param skip_interactive:
+  """
   if git_is_clean():
     return
   files = git_diff_files()
-  msg = """cannot bump the version with a dirty git index.
-you have uncommitted changes. stash your changes, or
-do something to the following files:
+  msg = """
+  cannot bump the version with a dirty git index.
+  you have uncommitted changes. stash your changes, or
+  do something to the following files:
 
   {}\n""".format('\n  '.join(files))
-  if options.skip_interactive:
+  if skip_interactive:
     fail(msg)
   # clean the index..
   info(msg)
@@ -343,9 +450,11 @@ do something to the following files:
     "[Y / n]: ").upper()
   if do_stash != "Y":
     pass  # fail("cannot continue with dirty index..")
-  info("\nok, you asked for it..\n")
+  info("""
+  ok, you asked for it..
+  """)
   git_stash()
-  ensure_clean_index(options)
+  ensure_clean_index(skip_interactive)
 
 
 # python package..
@@ -364,30 +473,29 @@ def set_version_in_file(filename, version_number, pattern):
     return before + version_number + after
 
   with open(filename, 'r') as f:
-    contents = re.sub(
+    data_str = re.sub(
       r"^(\s*%s\s*=\s*')(.+?)(')(?sm)" % pattern, inject_version, f.read())
   if len(changed) < 1:
     fail(
       "could not set init file version. pattern {} not found in {}",
       pattern, filename)
-  with open(filename, 'w') as f:
-    f.write(contents)
+  write(filename, data_str)
 
 
 def set_init_py_version(version):
   """
     :param version:
   """
-  info('setting __init__.py version to: {}', version)
-  set_version_in_file('__init__.py', version, '__version__')
+  info("setting __init__.py version to: {}", version)
+  set_version_in_file("__init__.py", version, "__version__")
 
 
 def set_setup_py_version(version):
   """
     :param version:
   """
-  info('Setting setup.py version to {}', version)
-  set_version_in_file('setup.py', version, 'version')
+  info("setting setup.py version to {}", version)
+  set_version_in_file("setup.py", version, "version")
 
 
 def setup_py_distribute():
@@ -439,14 +547,13 @@ def fail(message, *args):
 
 def info(message, *args):
   print >> sys.stdout, message.format(*args)
-  # print >> sys.stderr, message % args
 
 
-def show_project_version_info(current_tag, last_tag, last_version):
+def print_project_info(current_tag, last_tag, version_num):
   """
   prints project version information and exits without error.
   """
-  info(INFO_FMT, last_tag, current_tag, last_version)
+  info(INFO_FMT, last_tag, current_tag, version_num)
   exit(0)
 
 parser = OptionParser(
@@ -507,66 +614,34 @@ parser.add_option(
 
 def main():
   (options, args) = parser.parse_args()
-
-  tags = get_git_tags()
-  # what ro do on first time run? no tags yet..
-  if len(tags) < 1:
-    fail("""create a tag for version: 0.0.0 and try again.. sorry, we're
-still ghetto riggin this script along..""")
-    # todo: implement condition for new project without tags / version.
-    # https://github.com/gregorynicholas/keybump/issues/2
-
-  current_tag = get_current_or_last_git_tag(tags)
-  last_tag = tags[-1]
-  last_version = "0.0.0"
-  if len(current_tag) > 0:
-    non_decimal = re.compile(r'[^\d.]+')
-    last_version = non_decimal.sub('', current_tag)
+  project = Project(options.changelog_file, options.skip_interactive)
+  project.parse_git_tags()
+  project.parse_versions()
+  project.parse_releases()
 
   if not options.bump_type:
-    show_project_version_info(
-      current_tag, last_tag, last_version)
+    print_project_info(
+      project.current_tag,
+      project.last_tag,
+      project.last_version_num)
 
-  ensure_clean_index(options)
-  last_release = parse_changelog(
-    options.changelog_file, current_tag, last_version)
-  if last_release is None:
-    msg = "could not parse release from changelog history in {}.".format(
-      options.changelog_file)
-    if not options.skip_interactive:
-      # set to initial version..
-      info(msg)
-      set_initial = raw_input("""
-that's beacuse the file is empty. want keybump to
-"setup the initial file?  [Y / n]: """).upper()
-      if set_initial != "Y":
-        fail(msg)
-      info("\nok, you asked for it..\n")
-      last_release = set_default_changelog(
-        options.changelog_fmt, last_version)
-    else:
-      fail(msg)
-
+  ensure_clean_index(options.skip_interactive)
   # increment the version..
-  new_release = Release(
-    last_release.version, today_str(), last_release.codename)
-  new_release.bump()
-  if new_release.version in tags:
-    fail("version `{}` is already tagged", new_release.version)
-
-  info(""""previous release: {} (codename: {}, date: {})
-creating release: {} (codename: {}, date: {})\n""",
-       last_release.version, last_release.codename, last_release.date,
-       new_release.version, new_release.codename, new_release.date)
+  new_release = project.new_release()
+  info(""""
+  previous release: {} (codename: {}, date: {})
+  creating release: {} (codename: {}, date: {})
+  """,
+       project.last_release.version_num, project.last_release.codename,
+       project.last_release.date,
+       new_release.version_num, new_release.codename, new_release.date)
 
   # todo: add optional step to add a separate [version]-dev..
   # https://github.com/gregorynicholas/keybump/issues/3
   # setup the dev new version..
   # dev_version = new_version + '-dev'
 
-  summaries = get_changelog_summaries_since(current_tag)
-  new_release.set_summaries(summaries)
-  changelog_summary = new_release.bump_changelog()
+  changelog_summary = new_release.get_changelog_summary()
 
   # todo: add inline changelog summary editing..
   # https://github.com/gregorynicholas/keybump/issues/4
@@ -577,11 +652,16 @@ creating release: {} (codename: {}, date: {})\n""",
   #   changelog_summary = raw_input(BANNER)
 
   if not options.skip_interactive:
-    raw_input("""========================================================
-review + edit your CHANGES.md changelog summary. when you
-are finished, press any key here to continue..
-""")
-  prepend_changelog(options.changelog_file, changelog_summary)
+    all_good = raw_input("""
+  ========================================================
+  review + edit your CHANGES.md changelog summary.
+  continue with the release bump?  [Y / n]: """).upper()
+    if all_good != "Y":
+      fail("continuation of the release halted..")
+      # todo: create rollback flow?
+
+  # add the release changelog summary to the changelog file..
+  project.prepend_changelog(changelog_summary)
 
   # todo: add as optional step to set python __init__.py version..
   # set_init_version(new_version)
@@ -593,15 +673,15 @@ are finished, press any key here to continue..
     make_git_commit(options.changelog_file, new_release.tag_msg)
 
   if not options.skip_tag:
-    make_git_tag(new_release.tag_msg, new_release.version)
+    make_git_tag(new_release.tag_msg, new_release.version_num)
 
   if not options.skip_push:
     push_to_remote()
 
   info("""
-========================================================
-release complete: {}.
-""".format(new_release.tag_msg))
+  ========================================================
+  release complete: {}.
+  """.format(new_release.tag_msg))
 
   # optional pypi releases..
 
@@ -609,6 +689,7 @@ release complete: {}.
     setup_py_distribute()
     info("version built + released and uploaded to python package index..")
 
+  project.releases.append(new_release)
   exit(0)
 
 
