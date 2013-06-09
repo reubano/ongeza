@@ -1,45 +1,44 @@
 #!/usr/bin/env python
 """
-keybump
--------
+  keybump
+  ~~~~~~~
 
-helper script to perform a project release, and follow the semantic
-versioning specification.
+  helper script to perform a project release, and follow the semantic
+  versioning specification.
 
-links
-`````
+  links
+  -----
 
-* [documentation](http://packages.python.org/keybump)
+* [github docs](http://gregorynicholas.github.com/keybump)
+* [docs](http://packages.python.org/keybump)
 * [semantic versioning specification](http://semver.org)
-* [development version]
-  (http://github.com/gregorynicholas/keybump/zipball/master#egg=keybump-dev)
 
 """
 from setuptools import setup
 
 # grab requirments.
-with open('requirements.txt') as f:
+with open("requirements.txt") as f:
   required = f.readlines()
 
 setup(
-  name='keybump',
-  version='3.0.0',
-  url='http://github.com/gregorynicholas/keybump',
-  license='MIT',
-  author='gregorynicholas',
-  description='helper script to perform a project release, and follow the \
-semantic versioning specification.',
+  name="keybump",
+  version="3.0.1",
+  url="http://github.com/gregorynicholas/keybump",
+  license="MIT",
+  author="gregorynicholas",
+  description="helper script to perform a project release, and follow the "
+  "semantic versioning specification.",
   long_description=__doc__,
-  scripts=['keybump'],
+  scripts=["keybump"],
   zip_safe=False,
-  platforms='any',
+  platforms="any",
   install_requires=required,
   tests_require=[
-    # 'nose',
+    "nose==1.2.1",
+    "mock==1.0.1",
   ],
-  dependency_links=[
-  ],
-  # test_suite='nose.collector',
+  dependency_links=[],
+  test_suite="nose.collector",
   classifiers=[
     'Environment :: Web Environment',
     'Intended Audience :: Developers',
