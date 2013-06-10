@@ -58,7 +58,7 @@ options:
     --skip-commit           skips commiting any changes to the changelog file
     --skip-tag              skips creating a git tag at the current HEAD
     --skip-push             skips pushing to the remote origin
-    --pypi_distribute       build the release and upload to the python package index
+    --pypi-dist             build the release and upload to the python package index
     --changelog-file        path to a changelog history file
     --changelog-fmt         string format of the changelog version summary
     --git-commit-fmt        string format of the git commit message
