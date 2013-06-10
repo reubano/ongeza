@@ -38,7 +38,7 @@ setup(
     "mock==1.0.1",
   ],
   dependency_links=[],
-  test_suite="nose.collector",
+  test_suite="keybump_tests",
   classifiers=[
     'Environment :: Web Environment',
     'Intended Audience :: Developers',

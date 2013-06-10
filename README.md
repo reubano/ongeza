@@ -10,13 +10,13 @@ keybump
 
 ### introduction
 
-[![Build Status](https://secure.travis-ci.org/gregorynicholas/keybump.png?branch=master)](https://travis-ci.org/gregorynicholas/keybump)
+[![Build Status](https://secure.travis-ci.org/gregorynicholas/keybump.png?branch=develop)](https://travis-ci.org/gregorynicholas/keybump)
 
 if called with no options, keybump will print the script's current
 git tag version. it has been tested on the following configuration:
 
 * macosx *10.7.6*
-* python *2.7.1*
+* python *2.7.4*
 
 
 -----
