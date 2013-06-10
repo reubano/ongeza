@@ -35,7 +35,7 @@ monkey_keybump_module()
 import keybump
 
 
-class TestCase(unittest.TestCase):
+class _TestCase(unittest.TestCase):
   def __call__(self, result=None):
     """
     doing setup here means subclasses don't have to call super.setUp.
@@ -61,7 +61,7 @@ class TestCase(unittest.TestCase):
     self.stderr_patcher.stop()
 
 
-class GitHelperTests(TestCase):
+class GitHelperTests(_TestCase):
 
   @patch("keybump.sh")
   def test_get_current_git_tag(self, sh):
@@ -162,7 +162,7 @@ class GitHelperTests(TestCase):
     self.assertIn(errmsg, self.stderr.getvalue())
 
 
-class ProjectClassTests(TestCase):
+class ProjectClassTests(_TestCase):
   def setUp(self):
     self.changelogfs, self.changelog = tempfile.mkstemp(
       prefix="changes-", suffix=".md")
@@ -199,29 +199,51 @@ class ProjectClassTests(TestCase):
     summary = rel.summaries[0]
     self.assertEquals("initial version setup", summary)
 
-  def test_parse_changelog_to_releases_fails(self):
-    pass
+  @patch("keybump.input")
+  def test_parse_changelog_with_invalid_contents_fails(self, input):
+    input.return_value = "Y"
+    with open(self.changelog, "w") as f:
+      f.write("something random")
+
+    with self.assertRaises(SystemExit):
+      self.project.parse_releases()
+
+    errmsg = "unable to parse the changelog contents"
+    self.assertIn(errmsg, self.stderr.getvalue())
 
   def test_parse_changelog_to_releases_success(self):
-    pass
+    """
+    test that valid changelog contents does not prompt for interactive input,
+    and parses to `Release` objects properly.
+    """
+    datestr = keybump.today_str()
+    summs = ["testing some shit", "testing another item"]
+    with open(self.changelog, "w") as f:
+      contents = keybump.DEFAULT_CHANGELOG_FMT.format(
+        version_num="0.0.0",
+        datestr=datestr,
+        summaries=keybump.formatjoin(
+          keybump.DEFAULT_SUMMARY_ITEM_PREFIX, summs))
+      f.write(contents)
+    self.project.parse_releases()
+    self.assertEquals(1, self.project.release_count)
+    self.assertEquals("0.0.0", self.project.last_release.version_num)
+    self.assertEquals(datestr, self.project.last_release.datestr)
+    self.assertEquals(
+      summs[0], self.project.last_release.summaries[0])
+    self.assertEquals(
+      summs[1], self.project.last_release.summaries[1])
 
-  def test_new_release_success(self):
-    pass
 
-  def test_parse_versions_success(self):
-    pass
-
-
-class ReleaseClassTests(TestCase):
-  def setUp(self):
-    pass
-
-
-class SummaryFormatterTests(TestCase):
+class ReleaseClassTests(_TestCase):
   pass
 
 
-class KeybumpTests(TestCase):
+class SummaryFormatterTests(_TestCase):
+  pass
+
+
+class KeybumpTests(_TestCase):
   pass
 
 

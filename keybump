@@ -3,8 +3,8 @@
   keybump
   ~~~~~~~
 
-  helper script to perform a project release, and follow the semantic
-  versioning specification.
+  an opinionated script for managing version releases in a github project
+  and following the semantic versioning specification.
 
   :copyright: (c) 2013 by gregorynicholas.
   :license: MIT, see LICENSE for more details.
@@ -19,21 +19,35 @@ from subprocess import PIPE, STDOUT
 
 __all__ = [
   "main", "ensure_clean_index",
-  "Project", "Release", "SummaryFormatter",
+  "Project", "Release", "Changelog", "SummaryFormatter",
 ]
 
+github_issue_reference_keywords = [
+  "close",
+  "closes",
+  "closed",
+  "fix",
+  "fixes",
+  "fixed",
+  "resolve",
+  "resolves",
+  "resolved",
+]
 
 SUMMARY_SEPARATOR = "-"
 DEFAULT_CHANGELOG_FILE = "CHANGES.md"
-DEFAULT_TAG_MSG_FMT = "Version bumped to {}"
-DEFAULT_COMMIT_MSG_FMT = "Version bumped to {}"
+DEFAULT_TAG_MSG_FMT = "Version bumped to {version_num}"
+DEFAULT_COMMIT_MSG_FMT = "Version bumped to {version_num}"
+INITIAL_VERSION_SUMMARY_ITEM = "initial version setup"
+DEFAULT_SUMMARY_ITEM_PREFIX = "    * "
+DATESTR_FMT = "%Y-%m-%d"
 DEFAULT_CHANGELOG_FMT = """
-Version {{version}}
+Version {version_num}
 ----------------------
 
-Released on {{date}}
+Released on {datestr}
 
-{{summaries}}
+{summaries}
 
 """
 MAJOR_BUMP = "major"
@@ -73,21 +87,39 @@ class SummaryFormatter(BaseSummaryFormatter):
     BaseSummaryFormatter.__init__(self, *args)
 
 
-class Project(object):
+class ProjectConfig(object):
   """
+  class representing a project configuration object.
   """
 
-  def __init__(self, changelog_file, skip_interactive):
+
+class Project(object):
+  """
+  class representing a project object.
+  """
+
+  def __init__(
+    self, changelog_file, skip_interactive=True, changelog_fmt=None,
+    commit_msg_fmt=None, tag_msg_fmt=None, summaryformatter=None,
+    summaryitem_fmt=None):
     """
-      :param changelog_file:
+      :param changelog_file: string for the changelog file path
       :param skip_interactive:
     """
-    self.changelog_file = changelog_file
+    self.changelog = Changelog(changelog_file)
     self.skip_interactive = skip_interactive
+
+    self.changelog_fmt = changelog_fmt or DEFAULT_CHANGELOG_FMT
+    self.commit_msg_fmt = commit_msg_fmt or DEFAULT_COMMIT_MSG_FMT
+    self.tag_msg_fmt = tag_msg_fmt or DEFAULT_TAG_MSG_FMT
+    self.summaryitem_fmt = summaryitem_fmt or DEFAULT_SUMMARY_ITEM_PREFIX
+    self.summaryformatter = summaryformatter
+
     self.releases = []
     self.tags = []
     self.current_tag = None
     self.last_version_num = "0.0.0"
+    self.initial_version_summary_item = INITIAL_VERSION_SUMMARY_ITEM
 
   @property
   def codename(self):
@@ -96,8 +128,12 @@ class Project(object):
 
   @property
   def last_release(self):
-    if len(self.releases) > 0:
+    if self.release_count > 0:
       return self.releases[-1]
+
+  @property
+  def release_count(self):
+    return len(self.releases)
 
   @property
   def last_tag(self):
@@ -120,12 +156,12 @@ class Project(object):
     """
       :returns: string name of the current or last git tag.
     """
-    current_tag = get_current_git_tag()
-    if current_tag not in self.tags:
+    rv = get_current_git_tag()
+    if rv not in self.tags:
       # describe makes up it's own tag names, so make sure we have a real tag
       # to build from, else we're fucked.
-      current_tag = self.last_tag
-    return current_tag
+      rv = self.last_tag
+    return rv
 
   def parse_versions(self):
     if not self.current_tag or len(self.current_tag) < 1:
@@ -135,7 +171,7 @@ class Project(object):
 
   def parse_releases(self):
     """
-    sets the releases.
+    sets the releases property, parsed from the changelog summaries.
     """
     self.releases = self.parse_changelog_to_releases()
     if len(self.releases) < 1:
@@ -149,9 +185,12 @@ class Project(object):
       :returns: list of instance of a `Release` objects.
     """
     result = []
-    with open(self.changelog_file, "r") as f:
+    # todo: need to handle encoding..
+    with self.changelog.open() as f:
       lineiter = iter(f)
+      hasdata = False
       for line in lineiter:
+        hasdata = True
 
         # parse the last version..
         ver_match = version_reg.search(line.strip())
@@ -169,33 +208,42 @@ class Project(object):
             break
         rel_match = release_header_reg.search(release_header)
         if rel_match is None:
+          # todo: raise exception here?
           continue
         datestr, codename = rel_match.groups()
 
         # parse the change summary messages..
         summaries = []
         while 1:
-          summary = lineiter.next().strip()
+          try:
+            summary = lineiter.next()
+          except StopIteration:
+            break
           if summary:
-            summaries.append(summary)
+            if len(summary.strip()) > 0:
+              # strip summary_item_fmt front beginning of item..
+              l = len(self.summaryitem_fmt)
+              if summary[0:l] == self.summaryitem_fmt:
+                summary = summary[l:]
+              # remove newline char at end..
+              summaries.append(summary[:-1])
           else:
             break
 
         result.append(Release(
           self, version_num, datestr=datestr, summaries=summaries))
 
-      # no result was returned.. see if it's because the file was empty..
-      # if (len(f.read().strip()) > 1):
-      #   fail("unable to parse the change log contents.. "
-      #        "verify it's in the correct format.")
+      if len(result) == 0 and hasdata:
+        fail("""unable to parse the changelog contents.
 
+  format not recognized by parser.""")
       return result
 
   def setup_initial_release(self):
     """
     """
     msg = "could not parse release from changelog history in {}.".format(
-      self.changelog_file)
+      self.changelog.path)
     # fail and exit..
     if self.skip_interactive:
       fail(msg)
@@ -209,80 +257,93 @@ class Project(object):
   ok, you asked for it..
     """)
     rel = self.create_initial_release(self.last_version_num)
-    write(self.changelog_file, rel.get_changelog_summary())
+    self.changelog.write(rel.format_changelog_summary())
     self.releases.append(rel)
 
   def create_initial_release(self, version_num):
     rel = Release(
       self, version_num, datestr=today_str(),
-      summaries=["initial version setup"])
+      summaries=[self.initial_version_summary_item])
     return rel
-
-  def prepend_changelog(self, data):
-    contents = ""
-    with open(self.changelog_file, "r") as f:
-      if isinstance(data, basestring):
-        contents = data + "\n" + f.read()
-      else:
-        contents = f.readlines()
-    write(self.changelog_file, contents)
 
   def new_release(self):
     """
       :returns: instance of a `Release` object.
     """
-    release = Release(
+    rv = Release(
       self, self.last_release.version_num, datestr=today_str())
-    release.bump()
-    if release.version_num in self.tags:
-      fail("version `{}` is already tagged", release.version_num)
-    summaries = self.get_changelog_summaries_since(self.current_tag)
-    release.set_summaries(summaries)
-    return release
+    rv.bump()
+    if rv.version_num in self.tags:
+      fail("version `{}` is already tagged", rv.version_num)
+    rv.set_summaries(
+      self.get_changelog_summaries_since(self.current_tag))
+    return rv
 
   def get_changelog_summaries_since(self, last_tag):
     """
       :param last_tag:
       :returns: string list of git commit messages between the `last_tag`
-        and the latest commit.
+        and the latest commit
     """
     sep = "__||__"
     rv = sh("git log --no-merges --pretty=%B{} {}..", sep, last_tag)
     return [x.strip() for x in rv.split(sep)]
 
 
-class Release(object):
+class Changelog(object):
   """
-  object representing a version release.
+  class representing a changelog object.
   """
 
-  def __init__(self, project, version_num, datestr=None,
-               summaries=None, changelog_fmt=None, tag_msg_fmt=None,
-               summaryformatter=None):
+  def __init__(self, path, formatter=None, parser=None):
+    self.path = path
+    self.formatter = formatter
+    self.parser = parser
+
+  def open(self, mode="r"):
+    return open(self.path, mode)
+
+  def write(self, data):
+    write(self.path, data)
+
+  def prepend(self, data):
+    contents = ""
+    with self.open() as f:
+      if isinstance(data, basestring):
+        contents = data + "\n" + f.read()
+      else:
+        contents = f.readlines()
+    write(self.path, contents)
+
+
+class Release(object):
+  """
+  class representing a version release.
+  """
+
+  def __init__(self, project, version_num, datestr=None, summaries=None):
     """
       :param version_num: string version in the format: [x].[x].[x]
     """
+    self.project = project
     self.version_num = version_num or "0.0.0"
     self.set_date(datestr)
     self.set_summaries(summaries or [])
-    self.changelog_fmt = changelog_fmt or DEFAULT_CHANGELOG_FMT
-    self.tag_msg_fmt = tag_msg_fmt or DEFAULT_TAG_MSG_FMT
-    self.summaryformatter = summaryformatter
-    self.summaryitem_fmt = "\n    * "
-    self.project = project
     self.codename = project.codename
 
   @property
   def tag_msg(self):
-    return self.tag_msg_fmt.format(self.version_num)
+    return self.project.tag_msg_fmt.format(self.version_num)
 
   @property
   def commit_msg(self):
-    return self.changelog_fmt.format(self.version_num)
+    return self.project.commit_msg_fmt.format(
+      version_num=self.version_num,
+      datestr=self.datestr)
 
   @property
   def datestr(self):
-    return self.date.strftime("%Y-%m-%d")
+    return self.date.strftime(DATESTR_FMT)
 
   def set_date(self, datestr=None):
     """
@@ -293,36 +354,51 @@ class Release(object):
   def _parse_datestr(self, datestr):
     """
       :param datestr: string date in the format: %Y-%m-%d
-      :returns: `datetime.date` object parsed from the datestr param.
+      :returns: `datetime.date` object parsed from the `datestr` param
     """
     date_clean_re = re.compile(r"(\d+)(st|nd|rd|th)")
     datestr = date_clean_re.sub(r"\1", datestr)
-    return datetime.strptime(datestr, "%Y-%m-%d")
+    return datetime.strptime(datestr, DATESTR_FMT)
 
   def set_summaries(self, summaries):
-    self.summaries = self.format_summary_items(summaries)
+    """
+      :param summaries:
+    """
+    self.summaries = self._format_summary_items(summaries)
 
-  def format_summary_items(self, summaries):
+  def _format_summary_items(self, summaries):
     """
     cleans summary lines of text. removes merge commit messages.
 
+      :param summaries:
       :returns:
     """
     MIN_SUMMARY_LENGTH = 10
     SKIP_PREFIXES = ["MERGE BRANCH", "MERGE PULL REQUEST"]
     SKIP_EQUALITY = ["WHITESPACE"]
+    rv = []
     for line in summaries:
       # merge commits..
       lu = line.upper()
       for skip in SKIP_PREFIXES:
         if lu.startswith(skip):
-          summaries.remove(line)
+          continue
       for skip in SKIP_EQUALITY:
         if lu == skip:
-          summaries.remove(line)
-      if len(line) < MIN_SUMMARY_LENGTH:
-        summaries.remove(line)
-    return summaries
+          continue
+      if len(lu) < MIN_SUMMARY_LENGTH:
+        continue
+      rv.append(line)
+    return rv
+
+  def format_changelog_summary(self):
+    """
+      :returns: formatted string of the release changelog summary.
+    """
+    return self.project.changelog_fmt.format(
+      version_num=self.version_num,
+      datestr=self.datestr,
+      summaries=formatjoin(self.project.summaryitem_fmt, self.summaries))
 
   def _bump_num(self, version_num, bump_type=PATCH_BUMP):
     """
@@ -349,19 +425,12 @@ class Release(object):
     """
     self.version_num = self._bump_num(self.version_num, bump_type)
 
-  def get_changelog_summary(self):
-    """
-      :returns: formatted string of the release changelog summary.
-    """
-    rv = self.changelog_fmt.replace("{{version}}", self.version_num)
-    rv = rv.replace("{{date}}", self.datestr)
-    rv = rv.replace(
-      "{{summaries}}",
-      "    * " + self.summaryitem_fmt.join(self.summaries))
-    return rv
-
 
 # util helpers..
+
+
+def formatjoin(format, items):
+  return format + ("\n" + format).join(items)
 
 
 def write(path, data):
@@ -373,7 +442,7 @@ def write(path, data):
 
 
 def today_str():
-  return datetime.now().strftime("%Y-%m-%d")
+  return datetime.now().strftime(DATESTR_FMT)
 
 
 # git helpers..
@@ -392,9 +461,7 @@ def get_git_tags():
   """
     :returns: list of git tags, sorted by the date of the commit it points to.
   """
-
-  tags = sh("git for-each-ref --format='%(tag)' refs/tags")
-  return tags.splitlines()
+  return sh("git for-each-ref --format='%(tag)' refs/tags").splitlines()
 
 
 def git_is_clean():
@@ -422,7 +489,7 @@ def git_checkout(id):
 
 def git_stash():
   """
-  stashes current changes.
+  stashes current changes in git.
   """
   sh("git stash")
   return True
@@ -673,7 +740,12 @@ parser.add_option(
 
 
 def main(options, args):
-  project = Project(options.changelog_file, options.skip_interactive)
+  project = Project(
+    changelog_file=options.changelog_file,
+    skip_interactive=options.skip_interactive,
+    changelog_fmt=options.changelog_fmt,
+    commit_msg_fmt=options.git_commit_fmt,
+    tag_msg_fmt=options.git_tag_fmt)
   project.parse_git_tags()
   project.parse_versions()
   project.parse_releases()
@@ -700,7 +772,7 @@ def main(options, args):
   # setup the dev new version..
   # dev_version = new_version + '-dev'
 
-  changelog_summary = new_release.get_changelog_summary()
+  changelog_summary = new_release.format_changelog_summary()
 
   # todo: add inline changelog summary editing..
   # https://github.com/gregorynicholas/keybump/issues/4
@@ -711,7 +783,7 @@ def main(options, args):
   #   changelog_summary = input(BANNER)
 
   # add the release changelog summary to the changelog file..
-  project.prepend_changelog(changelog_summary)
+  project.changelog.prepend(changelog_summary)
 
   if not options.skip_interactive:
     if not choice("""
