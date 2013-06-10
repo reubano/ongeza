@@ -1,14 +1,19 @@
 keybump
 =======
 
+* keybump is an opinionated script for managing version releases in a github project.
+* keybump makes following the [semantic versioning specification](http://semver.org/) a breeze.
+* keybump helps to automate the tedious task of summarizing changes from one version to the next by intelligently parsing the commit messages.
+
+-----
+
 
 ### introduction
 
-keybump makes following the [semantic versioning specification](http://semver.org/)
-a breeze. if called with no options, keybump will print the script's current
-git tag version.
+[![Build Status](https://secure.travis-ci.org/gregorynicholas/keybump.png?branch=master)](https://travis-ci.org/gregorynicholas/keybump)
 
-it has been tested on the following configuration:
+if called with no options, keybump will print the script's current
+git tag version. it has been tested on the following configuration:
 
 * macosx *10.7.6*
 * python *2.7.1*
@@ -67,17 +72,65 @@ options:
 
 #### examples
 
-*normal usage*
+normal usage
 
     $ keybump --bump patch
 
-*view current project version*
+if called with no options, keybump will print the script's current
+project's information:
 
     $ keybump
 
 
 -----
 
+
+### github-flavored-markdown notes
+
+#### mentions
+
+use a /cc convention to call out people:
+[screenshot](https://a248.e.akamai.net/camo.github.com/37adea151a070a7f64794c8b02f3a2a072c9a1db/687474703a2f2f692e696d6775722e636f6d2f71634e50512e706e67)
+
+#### auto-linking
+
+certain [references are auto-linked](https://help.github.com/articles/github-flavored-markdown#references):
+
+* `SHA`              : 16c999e8c71134401a78d4d46435517b2271d6ac
+* `User@SHA` ref     : mojombo@16c999e8c71134401a78d4d46435517b2271d6ac
+* `User/Project@SHA` : mojombo/github-flavored-markdown@16c999e8...
+* `#Num`             : #1
+* `User/#Num`        : mojombo#1
+* `User/Project#Num` : mojombo/github-flavored-markdown#1
+
+#### task lists
+
+lists can be turned into Task Lists by prefacing list items with:
+
+* `[ ]  complete`
+* `[x]  incomplete`
+
+#### issues
+
+you can use any of the following keywords to close an issue via commit message:
+
+* `close`
+* `closes`
+* `closed`
+* `fix`
+* `fixes`
+* `fixed`
+* `resolve`
+* `resolves`
+* `resolved`
+
+
+note:
+referencing an issue number within the pull request title won't close it, the
+reference must be in a commit message, or the pull request body
+
+
+-----
 
 ### limitations
 
