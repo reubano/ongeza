@@ -8,6 +8,7 @@
 """
 import os
 import unittest
+import tempfile
 from mock import patch, MagicMock
 from StringIO import StringIO
 
@@ -34,8 +35,18 @@ monkey_keybump_module()
 import keybump
 
 
-class GitHelperTests(unittest.TestCase):
-  def setUp(self):
+class TestCase(unittest.TestCase):
+  def __call__(self, result=None):
+    """
+    doing setup here means subclasses don't have to call super.setUp.
+    """
+    try:
+      self._pre_setup()
+      unittest.TestCase.__call__(self, result)
+    finally:
+      self._post_teardown()
+
+  def _pre_setup(self):
     # monkey patch keybump's stdout + stdin..
     self.stdout = StringIO()
     self.stdout_patcher = patch("keybump.stdout")
@@ -45,9 +56,12 @@ class GitHelperTests(unittest.TestCase):
     self.stderr_patcher = patch("keybump.stderr")
     self.stderr_patcher.start().return_value = self.stderr
 
-  def tearDown(self):
+  def _post_teardown(self):
     self.stdout_patcher.stop()
     self.stderr_patcher.stop()
+
+
+class GitHelperTests(TestCase):
 
   @patch("keybump.sh")
   def test_get_current_git_tag(self, sh):
@@ -148,29 +162,69 @@ class GitHelperTests(unittest.TestCase):
     self.assertIn(errmsg, self.stderr.getvalue())
 
 
-class KeybumpTests(unittest.TestCase):
+class ProjectClassTests(TestCase):
+  def setUp(self):
+    self.changelogfs, self.changelog = tempfile.mkstemp(
+      prefix="changes-", suffix=".md")
+    self.project = keybump.Project(self.changelog, skip_interactive=False)
+
+  def test_class_instantiation(self):
+    rv = keybump.Project(self.changelog, skip_interactive=False)
+    self.assertIsNotNone(rv)
+    self.assertEquals(rv.last_version_num, "0.0.0")
+
+  @patch("keybump.input")
+  def test_no_changelog_releases_prompts_initial_fails(self, input):
+    """
+    test that when no changelog releases are parsed, the initial setup
+    is prompted and then fails.
+    """
+    input.return_value = "N"
+    with self.assertRaises(SystemExit):
+      self.project.parse_releases()
+
+  @patch("keybump.input")
+  def test_no_changelog_releases_sets_initial_release_success(self, input):
+    """
+    test that when no changelog releases are parsed, the initial setup
+    is prompted, and then succeeds.
+    """
+    input.return_value = "Y"
+    self.project.parse_releases()
+    self.assertEquals(1, len(self.project.releases))
+    rel = self.project.releases[0]
+    self.assertEquals(rel, self.project.last_release)
+    self.assertEquals("0.0.0", rel.version_num)
+    self.assertEquals(1, len(rel.summaries))
+    summary = rel.summaries[0]
+    self.assertEquals("initial version setup", summary)
+
+  def test_parse_changelog_to_releases_fails(self):
+    pass
+
+  def test_parse_changelog_to_releases_success(self):
+    pass
+
+  def test_new_release_success(self):
+    pass
+
+  def test_parse_versions_success(self):
+    pass
+
+
+class ReleaseClassTests(TestCase):
   def setUp(self):
     pass
 
 
-class ChangelogSummaryTests(unittest.TestCase):
-  def setUp(self):
-    pass
-
-  def summary_cleanup(self):
-    raise NotImplemented("error")
+class SummaryFormatterTests(TestCase):
+  pass
 
 
-class ProjectClassTests(unittest.TestCase):
-  def setUp(self):
-    pass
+class KeybumpTests(TestCase):
+  pass
 
 
-class ReleaseClassTests(unittest.TestCase):
-  def setUp(self):
-    pass
-
-
-if __name__ == '__main__':
+if __name__ == "__main__":
   unittest.main(exit=False)
   unmonkey_keybump_module()
