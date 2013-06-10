@@ -649,7 +649,7 @@ parser.add_option(
   default=False, help="skips pushing to the remote origin")
 
 parser.add_option(
-  "--pypi_distribute", dest="pypi_distribute", action="store_true",
+  "--pypi-dist", dest="pypi_distribute", action="store_true",
   help="build the release and upload to the python package index")
 
 # todo: implement message formats as cli options..
