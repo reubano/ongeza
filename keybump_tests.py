@@ -166,12 +166,20 @@ class ProjectClassTests(_TestCase):
   def setUp(self):
     self.changelogfs, self.changelog = tempfile.mkstemp(
       prefix="changes-", suffix=".md")
-    self.project = keybump.Project(self.changelog, skip_interactive=False)
+    config = keybump.KeybumpConfig({
+      "changelog_file": self.changelog,
+      "skip_interactive": False
+    })
+    self.project = keybump.Project(config)
 
   def test_class_instantiation(self):
-    rv = keybump.Project(self.changelog, skip_interactive=False)
+    config = keybump.KeybumpConfig({
+      "changelog_file": self.changelog,
+      "skip_interactive": False
+    })
+    rv = keybump.Project(config)
     self.assertIsNotNone(rv)
-    self.assertEquals(rv.last_version_num, "0.0.0")
+    self.assertEquals(rv.last_version_num, keybump.INITIAL_VERSION_NUM)
 
   @patch("keybump.input")
   def test_no_changelog_releases_prompts_initial_fails(self, input):
@@ -194,7 +202,7 @@ class ProjectClassTests(_TestCase):
     self.assertEquals(1, len(self.project.releases))
     rel = self.project.releases[0]
     self.assertEquals(rel, self.project.last_release)
-    self.assertEquals("0.0.0", rel.version_num)
+    self.assertEquals(keybump.INITIAL_VERSION_NUM, rel.version_num)
     self.assertEquals(1, len(rel.summaries))
     summary = rel.summaries[0]
     self.assertEquals("initial version setup", summary)
