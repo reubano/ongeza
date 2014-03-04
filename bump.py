@@ -32,7 +32,7 @@ parser.add_argument(
 	help='increase output verbosity')
 
 parser.add_argument(
-	'-S', '--skip-commit', action='store_true', help='skip commiting version '
+	'-S', '--skip-commit', action='store_true', help='skip commiting version'
 	' bumped files')
 
 parser.add_argument(
@@ -70,7 +70,7 @@ def main():
 			msg = 'Current version: %s' % project.version
 		elif not project.is_clean:
 			raise Exception(
-				"Cant bump the version with a dirty git index. Please commit "
+				"Can't bump the version with a dirty git index. Please commit "
 				"your changes or stash the following files and try again:\n%s" %
 				"\n".join(project.dirty_files))
 		elif (project.version and args.bump_type):
@@ -96,10 +96,12 @@ def main():
 			message = args.tag_format.format(version=project.version)
 			git.tag(message, project.version)
 		elif args.tag:
-			msg = "No version found to tag"
+			raise Exception("Couldn't find a version to bump. Nothing to tag.")
 
-		if args.push:
+		if (project.bumped and args.push):
 			git.push()
+		elif args.push:
+			raise Exception("Couldn't find a version to bump. Nothing to push.")
 
 		print(msg)
 	except Exception as err:
