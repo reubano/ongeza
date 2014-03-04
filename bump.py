@@ -1,17 +1,18 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 """ An automated way to follow the Semantic Versioning Specification """
 
 import os
 from sys import exit
-from argparse import RawTextHelpFormatter
-from argparse import ArgumentParser
-from subprocess import call
-from subprocess import check_output
+from argparse import RawTextHelpFormatter, ArgumentParser
+from subprocess import call, check_output
 
 parser = ArgumentParser(
-	description="description: bump makes following the Semantic Versioning" "Specification a breeze.\nIf called with no options, bump will print "
-		"the script's current git tag version.", prog='bump',
+	description="description: bump makes following the Semantic Versioning"
+		"Specification a breeze.\nIf called with no options, bump will print "
+		"the script's current git tag version.\nIf <dir> is not specified, the "
+		"current dir is used", prog='bump',
 		usage='%(prog)s [options] <dir>', formatter_class=RawTextHelpFormatter)
 
 group = parser.add_mutually_exclusive_group()
@@ -33,7 +34,9 @@ parser.add_argument(
 	'-g', '--tag', dest='tag', action='store_true', help='tag git repo with the'
 	' bumped version number')
 
-parser.add_argument(dest='dir', type=str, help='the project directory')
+parser.add_argument(
+	dest='dir', nargs='?', default=os.curdir, type=str,
+	help='the project directory')
 
 args = parser.parse_args()
 
@@ -142,4 +145,5 @@ def main():
 
 	exit(0)
 
-if __name__ == '__main__': main()
+if __name__ == '__main__':
+	main()
