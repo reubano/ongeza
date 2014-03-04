@@ -23,7 +23,10 @@ from subprocess import call, check_output
 
 
 def sh(cmd, output=False):
-	check_output(cmd, shell=True) if output else check_call(cmd, shell=True)
+	if output:
+		return check_output(cmd, shell=True)
+	else:
+		return call(cmd, shell=True) is 0
 
 
 class Project(object):
@@ -78,7 +81,7 @@ class Project(object):
 	def set_versions(self, new_version, pattern=None, i=0):
 		try:
 			file = self.versioned_files[i]
-			i++
+			i += 1
 		except KeyError:
 			return
 
