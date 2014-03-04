@@ -36,8 +36,11 @@ parser.add_argument(
 	' bumped files')
 
 parser.add_argument(
-	'-g', '--skip-tag', action='store_true', help='skip tagging git repo with '
-	'the bumped version number')
+	'-T', '--tag', action='store_true', help='tag git repo with the bumped '
+	'version number')
+
+group.add_argument(
+	'-p', '--push', action='store_true', help='push to the remote origin')
 
 parser.add_argument(
 	'-f', '--tag-format', action='store',
@@ -48,9 +51,6 @@ parser.add_argument(
 	'-F', '--commit-format', action='store',
 	default='Bump to version {version}',
 	help='git commit message format')
-
-group.add_argument(
-	'-p', '--push', action='store_true', help='push to the remote origin')
 
 parser.add_argument(
 	dest='dir', nargs='?', default=os.curdir, type=str,
@@ -89,10 +89,10 @@ def main():
 		git.add(versioned_files)
 		git.commit(message)
 
-	if (not args.skip_tag and project.version):
+	if (args.tag and project.version):
 		message = args.tag_format.format(version=project.version)
 		git.tag(message, project.version)
-	elif not args.skip_tag:
+	elif args.tag:
 		string = "No version found to tag"
 
 	print('%s' % string)
