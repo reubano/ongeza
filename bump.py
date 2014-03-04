@@ -3,12 +3,6 @@
 """ An automated way to follow the Semantic Versioning Specification """
 
 import os
-import re
-import logging
-import sys
-import traceback
-import itertools
-
 from sys import exit
 from argparse import RawTextHelpFormatter
 from argparse import ArgumentParser
@@ -105,54 +99,46 @@ def bumpVersion(bumpType, currVersion):
 	return '.'.join(map(str, switch.get(bumpType)()))
 
 def main():
-	logging.basicConfig(level=logging.WARNING)
-	log = logging.getLogger(__name__)
+	files = os.listdir(args.dir)
+	fileName = ('pearfarm.spec', 'setup.cfg', 'setup.py', )
+	fileExt = ('.xml', '.json')
+	versionedFiles = filter(lambda x: x.endswith(fileExt), files)
+	[versionedFiles.append(f) for f in files if f in fileName]
+	isTagged = hasTag(args.dir)
 
-	try:
-		files = os.listdir(args.dir)
-		fileName = ('pearfarm.spec', 'setup.cfg', 'setup.py', )
-		fileExt = ('.xml', '.json')
-		versionedFiles = filter(lambda x: x.endswith(fileExt), files)
-		[versionedFiles.append(f) for f in files if f in fileName]
-		isTagged = hasTag(args.dir)
+	if isTagged:
+		curVersion = getVersion(args.dir)
+		devVersion = getDevVersion(curVersion)
 
-		if isTagged:
-			curVersion = getVersion(args.dir)
-			devVersion = getDevVersion(curVersion)
+	if (not isTagged and args.bumpType):
+		string = "No git tags found, please use the '-s' option"
+	elif (isTagged and not args.bumpType and not args.version):
+		string = 'Current version: %s' % curVersion
+	elif (isTagged and args.bumpType):
+		newVersion = bumpVersion(args.bumpType, devVersion)
+		[setVersion(curVersion, newVersion, file, args.dir)
+			for file in versionedFiles]
 
-		if (not isTagged and args.bumpType):
-			string = "No git tags found, please use the '-s' option"
-		elif (isTagged and not args.bumpType and not args.version):
-			string = 'Current version: %s' % curVersion
-		elif (isTagged and args.bumpType):
-			newVersion = bumpVersion(args.bumpType, devVersion)
-			[setVersion(curVersion, newVersion, file, args.dir)
-				for file in versionedFiles]
+		string = 'Bump from version %s to %s' % (curVersion, newVersion)
+	else: # set the version
+		# TODO: check args.version validity
+		newVersion = args.version
+		[setVersion(None, newVersion, file, args.dir)
+			for file in versionedFiles]
 
-			string = 'Bump from version %s to %s' % (curVersion, newVersion)
-		else: # set the version
-			# TODO: check args.version validity
-			newVersion = args.version
-			[setVersion(None, newVersion, file, args.dir)
-				for file in versionedFiles]
+		string = 'Set to version %s' % newVersion
 
-			string = 'Set to version %s' % newVersion
+	if (args.version or (args.bumpType and isTagged)):
+		message = 'Bump to version %s' % newVersion
+		gitAdd(versionedFiles, args.dir)
+		gitCommit(message, args.dir)
 
-		if (args.version or (args.bumpType and isTagged)):
-			message = 'Bump to version %s' % newVersion
-			gitAdd(versionedFiles, args.dir)
-			gitCommit(message, args.dir)
+	if (args.tag and version):
+		gitTag(version, args.dir)
+	elif args.tag:
+		string = "No version found to tag"
 
-		if (args.tag and version):
-			gitTag(version, args.dir)
-		elif args.tag:
-			string = "No version found to tag"
-
-		print('%s' % (string))
-	except Exception as err:
-		sys.stderr.write('ERROR: %s\n' % str(err))
-#		traceback.print_exc(file=sys.stdout)
-#		log.exception('%s\n' % str(err))
+	print('%s' % string)
 
 	exit(0)
 
