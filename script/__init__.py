@@ -71,7 +71,8 @@ class Project(object):
 			raise Exception('%s is not a directory' % (self.dir))
 
 	@property
-	def dev_version(self):
+	def fmt_version(self):
+		# split the version into a list of ints.
 		return map(int, self.version.split('.'))
 
 	def set_versions(self, new_version, pattern=None, i=0):
@@ -109,35 +110,7 @@ class Project(object):
 				new_version)
 			return sh(cmd, True) is 'true'
 
-	@property
-	def last_tag(self, tags):
-		return tags[-1]
-
-	@property
-	def info(self, current_tag, last_tag, version_num):
-		"""
-		prints project version information and exits without error.
-		"""
-		INFO_FMT = "project version information:\nlatest tag:   {}\n"
-		INFO_FMT += "current tag:  {}\nversion id:   {}"
-		INFO_FMT.format(last_tag, current_tag, version_num)
-
-
-class Release(object):
-	"""
-	class representing a version release.
-	"""
-
-	def __init__(self, project, version_num, datestr=None, summaries=None):
-		"""
-		Parameters
-		----------
-		version_num: string version in the format: [x].[x].[x]
-		"""
-		self.project = project
-		self.codename = project.codename
-
-	def _bump_num(self, version_num, bump_type):
+	def bump(self, bump_type):
 		"""
 		Parameters
 		----------
@@ -150,29 +123,18 @@ class Release(object):
 		-------
 		concatenated string of the incremented version name.
 		"""
-		# split the version number into a list of ints..
+		version = self.fmt_version
+
 		try:
-			version = [int(v) for v in version_num.split(".")]
 			switch = {
-				"major": lambda: [version[0] + 1, 0, 0],
-				"minor": lambda: [version[0], version[1] + 1, 0],
-				"patch": lambda: [version[0], version[1], version[2] + 1]}
-			return ".".join(map(str, switch.get(bump_type)()))
+				'm': lambda: [version[0] + 1, 0, 0],
+				'n': lambda: [version[0], version[1] + 1, 0],
+				'p': lambda: [version[0], version[1], version[2] + 1]}
 		except ValueError:
 			raise Exception(
-				'version string: %i is an invalid format.' % version_num)
-
-	def bump(self, bump_type):
-		"""
-		Parameters
-		----------
-		bump_type: version bump type. one of:
-			m = major - [x].0.0
-			n = minor - x.[y].0
-			p = patch - x.y.[z]
-		"""
-		self.version_num = self._bump_num(self.version_num, bump_type)
-
+				'Invalid version: %i. Please use x.y.z format.' % self.version)
+		else:
+			return '.'.join(map(str, switch.get(bump_type)()))
 
 class Git(object):
 	"""
