@@ -101,7 +101,7 @@ class Project(object):
 		try:
 			file = self.versioned_files[i]
 			i += 1
-		except KeyError:
+		except IndexError:
 			return
 
 		if not self.version:
