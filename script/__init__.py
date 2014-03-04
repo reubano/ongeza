@@ -78,6 +78,25 @@ class Project(object):
 		# split the version into a list of ints.
 		return map(int, self.version.split('.'))
 
+	@property
+	def is_clean(self):
+		"""
+		Returns
+		-------
+		boolean if there is a dirty index.
+		"""
+		return sh("cd %s; git diff --quiet" % self.dir)
+
+	@property
+	def dirty_files(self):
+		"""
+		Returns
+		-------
+		list of string names of the dirty files.
+		"""
+		files = sh("cd %s; git diff --minimal --numstat" % self.dir, True)
+		return [x.split("\t")[-1] for x in files.splitlines()]
+
 	def set_versions(self, new_version, pattern=None, i=0):
 		try:
 			file = self.versioned_files[i]
@@ -151,25 +170,6 @@ class Git(object):
 		dir: directory containing the git project
 		"""
 		self.dir = dir
-
-	@property
-	def is_clean(self):
-		"""
-		Returns
-		-------
-		boolean if there is a dirty index.
-		"""
-		return sh("cd %s; git diff --quiet" % self.dir)
-
-	@property
-	def dirty_files(self):
-		"""
-		Returns
-		-------
-		list of string names of the dirty files.
-		"""
-		files = sh("cd %s; git diff --minimal --numstat" % self.dir, True)
-		return [x.split("\t")[-1] for x in files.splitlines()]
 
 	def add(self, files):
 		files = ' '.join(files)
