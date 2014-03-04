@@ -1,23 +1,18 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 """ An automated way to follow the Semantic Versioning Specification """
 
 import os
-import re
-import logging
-import sys
-import traceback
-import itertools
-
 from sys import exit
-from argparse import RawTextHelpFormatter
-from argparse import ArgumentParser
-from subprocess import call
-from subprocess import check_output
+from argparse import RawTextHelpFormatter, ArgumentParser
+from subprocess import call, check_output
 
 parser = ArgumentParser(
-	description="description: bump makes following the Semantic Versioning" "Specification a breeze.\nIf called with no options, bump will print "
-		"the script's current git tag version.", prog='bump',
+	description="description: bump makes following the Semantic Versioning"
+		"Specification a breeze.\nIf called with no options, bump will print "
+		"the script's current git tag version.\nIf <dir> is not specified, the "
+		"current dir is used", prog='bump',
 		usage='%(prog)s [options] <dir>', formatter_class=RawTextHelpFormatter)
 
 group = parser.add_mutually_exclusive_group()
@@ -29,10 +24,7 @@ group.add_argument(
 		"  p = patch - 1.0.z")
 
 group.add_argument(
-	'-s', '--set', dest='set', type=str, help='set arbitrary version number')
-
-parser.add_argument(
-	'-p', '--pattern', dest='pattern', default='version', type=str, help='search pattern when setting arbitrary version number')
+	'-s', '--set', dest='version', type=str, help='set arbitrary version number')
 
 parser.add_argument(
 	'-v', '--verbose', dest='verbose', action='store_true',
@@ -42,7 +34,9 @@ parser.add_argument(
 	'-g', '--tag', dest='tag', action='store_true', help='tag git repo with the'
 	' bumped version number')
 
-parser.add_argument(dest='dir', type=str, help='the project directory')
+parser.add_argument(
+	dest='dir', nargs='?', default=os.curdir, type=str,
+	help='the project directory')
 
 args = parser.parse_args()
 
@@ -56,28 +50,30 @@ def hasTag(gitDir):
 def getVersion(gitDir):
 	# Get the current release version from git.
 	if os.path.isdir(gitDir):
-		version = check_output(
-			'cd %s; git describe --tags' % (gitDir), shell=True)
+		cmd = 'cd %s; git tag | grep v | tail -n1' % (gitDir)
+		version = check_output(cmd, shell=True)
 		version = version.lstrip('v').rstrip()
 		return version.split('-')[0]
 	else:
 		raise Exception('%s is not a directory' % (gitDir))
 
-def setVersion(oldVersion, newVersion, file, pattern=None):
+def setVersion(oldVersion, newVersion, file, dir, pattern=None):
 	if not oldVersion:
 		# find lines in file containing pattern
-		lines = check_output("grep -ne '%s' %s" % (pattern, file), shell=True)
+		cmd = 'cd %s; grep -ine "%s" %s' % (dir, pattern, file)
+		lines = check_output(cmd, shell=True)
 
 		# find first line containing a version number
-		cmd = "echo '%s' | grep -m1 '[0-9]*\.[0-9]*\.[0-9]*'" % (lines)
+		cmd = 'echo "%s" | grep -im1 "[0-9]*\.[0-9]*\.[0-9]*"' % (lines)
 		repLine = check_output(cmd, shell=True)
 		replLineNum = repLine.split(':')[0]
 
 		# replace with new version number
-		cmd = ("sed -i '' '%ss/[0-9]*\.[0-9]*\.[0-9]*/%s/g' %s"
-			% (replLineNum, newVersion, file))
+		cmd = ("cd %s; sed -i '' '%ss/[0-9]*\.[0-9]*\.[0-9]*/%s/g' %s"
+			% (dir, replLineNum, newVersion, file))
 	else:
-		cmd = "sed -i '' 's/%s/%s/g' %s" % (oldVersion, newVersion, file)
+		cmd = ("cd %s; sed -i '' 's/%s/%s/g' %s"
+			% (dir, oldVersion, newVersion, file))
 
 	return call(cmd, shell=True)
 
@@ -106,48 +102,48 @@ def bumpVersion(bumpType, currVersion):
 	return '.'.join(map(str, switch.get(bumpType)()))
 
 def main():
-	logging.basicConfig(level=logging.WARNING)
-	log = logging.getLogger(__name__)
+	files = os.listdir(args.dir)
+	fileName = ('pearfarm.spec', 'setup.cfg', 'setup.py', )
+	fileExt = ('.xml', '.json')
+	versionedFiles = filter(lambda x: x.endswith(fileExt), files)
+	[versionedFiles.append(f) for f in files if f in fileName]
+	isTagged = hasTag(args.dir)
 
-	try:
-		files = os.listdir(args.dir)
-		fileExt = '.spec', '.xml', '.cfg'
-		versionedFiles = filter(lambda x: x.endswith(fileExt), files)
-		isTagged = hasTag(args.dir)
+	if isTagged:
+		curVersion = getVersion(args.dir)
+		devVersion = getDevVersion(curVersion)
 
-		if isTagged:
-			curVersion = getVersion(args.dir)
-			devVersion = getDevVersion(curVersion)
+	if (not isTagged and args.bumpType):
+		string = "No git tags found, please use the '-s' option"
+	elif (isTagged and not args.bumpType and not args.version):
+		string = 'Current version: %s' % curVersion
+	elif (isTagged and args.bumpType):
+		newVersion = bumpVersion(args.bumpType, devVersion)
+		[setVersion(curVersion, newVersion, file, args.dir)
+			for file in versionedFiles]
 
-		if (not isTagged and args.bumpType):
-			string = "No git tags found, please use the '-s' option"
-		elif (isTagged and not args.bumpType and not args.set):
-			string = 'Current version: %s' % curVersion
-		elif (isTagged and args.bumpType):
-			newVersion = bumpVersion(args.bumpType, devVersion)
-			[setVersion(curVersion, newVersion, file)
-				for file in versionedFiles]
+		string = 'Bump from version %s to %s' % (curVersion, newVersion)
+	else: # set the version
+		# TODO: check args.version validity
+		newVersion = args.version
+		[setVersion(None, newVersion, file, args.dir)
+			for file in versionedFiles]
 
-			string = 'Bump from version %s to %s' % (curVersion, newVersion)
-		else: # it is args.set
-			[setVersion(None, args.set, file, args.pattern)
-				for file in versionedFiles]
+		string = 'Set to version %s' % newVersion
 
-			string = 'Set to version %s' % args.set
+	if (args.version or (args.bumpType and isTagged)):
+		message = 'Bump to version %s' % newVersion
+		gitAdd(versionedFiles, args.dir)
+		gitCommit(message, args.dir)
 
-		if args.tag and (args.set or (args.bumpType and isTagged)):
-			version = (newVersion or args.set)
-			message = 'Bump to version %s' % version
-			gitAdd(versionedFiles, args.dir)
-			gitCommit(message, args.dir)
-			gitTag(version, args.dir)
+	if (args.tag and version):
+		gitTag(version, args.dir)
+	elif args.tag:
+		string = "No version found to tag"
 
-		print('%s' % (string))
-	except Exception as err:
-		sys.stderr.write('ERROR: %s\n' % str(err))
-#		traceback.print_exc(file=sys.stdout)
-#		log.exception('%s\n' % str(err))
+	print('%s' % string)
 
 	exit(0)
 
-if __name__ == '__main__': main()
+if __name__ == '__main__':
+	main()

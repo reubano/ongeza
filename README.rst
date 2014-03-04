@@ -4,7 +4,7 @@ bump
 Introduction
 ------------
 
-bump makes following the `Semantic Versioning Specification http://semver.org/>`_ a breeze. If called with no options, bump will print the script's current git tag version. It has been tested on the following configuration:
+bump makes following the `Semantic Versioning Specification http://semver.org/>`_ a breeze. If called with no options, bump will print the repo's current git tag version. It has been tested on the following configuration:
 
 * MacOS X 10.7.4
 * Python 2.7.3
