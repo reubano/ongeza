@@ -45,7 +45,7 @@ class Project(object):
 	def has_tag(self):
 		# Check if repo has any git tags.
 		if os.path.isdir(self.dir):
-			return check_output('cd %s; git tag' % (self.dir), shell=True)
+			return sh('cd %s; git tag' % (self.dir), True)
 		else:
 			raise Exception('%s is not a directory' % (self.dir))
 
@@ -64,7 +64,7 @@ class Project(object):
 		# Get the current release version from git.
 		if os.path.isdir(self.dir):
 			cmd = 'cd %s; git tag | grep v | tail -n1' % (self.dir)
-			version = check_output(cmd, shell=True)
+			version = sh(cmd, True)
 			version = version.lstrip('v').rstrip()
 			return version.split('-')[0]
 		else:
@@ -169,25 +169,18 @@ class Git(object):
 
 	def add(self, files):
 		files = ' '.join(files)
-		return call('cd %s; git add %s' % (self.dir, files), shell=True)
+		return sh('cd %s; git add %s' % (self.dir, files))
 
 	def commit(self, message):
-		return call("cd %s; git commit -m '%s'" % (self.dir, message), shell=True)
+		return sh("cd %s; git commit -m '%s'" % (self.dir, message))
 
 	def tag(self, message, version):
 		cmd = "cd %s; git tag -sm '%s' v%s" % (self.dir, message, version)
-		return call(cmd, shell=True)
-
-	def stash(self):
-		"""
-		stashes current changes in git.
-		"""
-		sh("git stash")
-		return True
+		return sh(cmd)
 
 	def push(self):
 		"""
 		pushes current branch and tags to remote.
 		"""
 		# don't call --all here on purpose..
-		sh("git push && git push --tags")
+		return sh("cd %s; git push && git push --tags" % self.dir)
