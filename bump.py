@@ -47,7 +47,7 @@ def hasTag(gitDir):
 def getVersion(gitDir):
 	# Get the current release version from git.
 	if os.path.isdir(gitDir):
-		cmd = 'cd %s; git describe --tags' % (gitDir)
+		cmd = 'cd %s; git tag | grep v | tail -n1' % (gitDir)
 		version = check_output(cmd, shell=True)
 		version = version.lstrip('v').rstrip()
 		return version.split('-')[0]
