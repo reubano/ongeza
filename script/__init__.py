@@ -42,6 +42,7 @@ class Project(object):
 			the project directory
 		"""
 		self.current_tag = None
+		self.bumped = False
 		self.dir = dir
 
 	@property
@@ -125,6 +126,7 @@ class Project(object):
 
 		# TODO: add check to see if any files were changed. Use git.
 		sh(cmd)
+		self.bumped = True
 		return self.set_versions(new_version, pattern, i)
 
 	def check_version(self, new_version):
