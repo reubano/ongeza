@@ -32,9 +32,6 @@ group.add_argument(
 	'-s', '--set', dest='version', type=str, help='set arbitrary version number')
 
 parser.add_argument(
-	'-p', '--pattern', dest='pattern', default='version', type=str, help='search pattern when setting arbitrary version number')
-
-parser.add_argument(
 	'-v', '--verbose', dest='verbose', action='store_true',
 	help='increase output verbosity')
 
@@ -113,8 +110,10 @@ def main():
 
 	try:
 		files = os.listdir(args.dir)
-		fileExt = '.spec', '.xml', '.cfg'
+		fileName = ('pearfarm.spec', 'setup.cfg', 'setup.py', )
+		fileExt = ('.xml', '.json')
 		versionedFiles = filter(lambda x: x.endswith(fileExt), files)
+		[versionedFiles.append(f) for f in files if f in fileName]
 		isTagged = hasTag(args.dir)
 
 		if isTagged:
@@ -131,11 +130,13 @@ def main():
 				for file in versionedFiles]
 
 			string = 'Bump from version %s to %s' % (curVersion, newVersion)
-		else: # it is args.set
-			[setVersion(None, args.version, file, args.dir, args.pattern)
+		else: # set the version
+			# TODO: check args.version validity
+			newVersion = args.version
+			[setVersion(None, newVersion, file, args.dir)
 				for file in versionedFiles]
 
-			string = 'Set to version %s' % args.version
+			string = 'Set to version %s' % newVersion
 
 		if args.tag and (args.version or (args.bumpType and isTagged)):
 			version = (newVersion or args.version)
