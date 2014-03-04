@@ -22,11 +22,6 @@ import os
 from subprocess import call, check_output
 
 
-def fail(message):
-	print message
-	exit(1)
-
-
 def sh(cmd):
 	call(cmd, shell=True)
 
@@ -55,6 +50,16 @@ class Project(object):
 			raise Exception('%s is not a directory' % (self.dir))
 
 	@property
+	def versioned_files(self):
+		# Get list of files with version metadata.
+		files = os.listdir(self.dir)
+		file_name = ('pearfarm.spec', 'setup.cfg', 'setup.py')
+		file_ext = ('.xml', '.json')
+		versioned_files = filter(lambda x: x.endswith(file_ext), files)
+		[versioned_files.append(f) for f in files if f in file_name]
+		return versioned_files
+
+	@property
 	def version(self):
 		# Get the current release version from git.
 		if os.path.isdir(self.dir):
@@ -70,20 +75,6 @@ class Project(object):
 		return map(int, self.version.split('.'))
 
 	def set_version(self, new_version, file, dir, pattern=None):
-# 		def inject_version(match):
-# 			before, old, after = match.groups()
-# 			changed.append(True)
-# 			return before + version_number + after
-#
-# 		with open(filename, "r") as f:
-# 			data_str = re.sub(
-# 				r"^(\s*%s\s*=\s*')(.+?)(')(?sm)" % pattern, inject_version, f.read())
-# 		if len(changed) < 1:
-# 			fail(
-# 				"could not set init file version. pattern {} not found in {}",
-# 				pattern, filename)
-# 		write(filename, data_str)
-
 		if not self.version:
 			# find lines in file containing pattern
 			cmd = 'cd %s; grep -ine "%s" %s' % (dir, pattern, file)
@@ -101,6 +92,7 @@ class Project(object):
 			cmd = ("cd %s; sed -i '' 's/%s/%s/g' %s"
 				% (dir, self.version, new_version, file))
 
+		# TODO: add check to see if any files were changed. Use git.
 		return call(cmd, shell=True)
 
 	def bump_version(self, bump_type):
@@ -175,7 +167,8 @@ class Release(object):
 				"patch": lambda: [version[0], version[1], version[2] + 1]}
 			return ".".join(map(str, switch.get(bump_type)()))
 		except ValueError:
-			fail("version string: %i is an invalid format.." % version_num)
+			raise Exception(
+				'version string: %i is an invalid format.' % version_num)
 
 	def bump(self, bump_type):
 		"""
@@ -278,4 +271,4 @@ class Git(object):
 
 		{}
 		""".format("\n	".join(files))
-		fail(msg)
+		raise Exception(msg)

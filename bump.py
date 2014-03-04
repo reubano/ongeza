@@ -63,30 +63,24 @@ def main():
 	project = Project(args.dir)
 	git = Git(args.dir)
 
-	files = os.listdir(args.dir)
-	file_name = ('pearfarm.spec', 'setup.cfg', 'setup.py', )
-	file_ext = ('.xml', '.json')
-	versioned_files = filter(lambda x: x.endswith(file_ext), files)
-	[versioned_files.append(f) for f in files if f in file_name]
-
 	if (not project.has_tag and args.bump_type):
-		fail("No git tags found, please run with the '-s' option")
+		raise Exception("No git tags found, please run with the '-s' option")
 	elif (project.has_tag and not args.bump_type and not args.version):
 		string = 'Current version: %s' % project.version
 	elif (project.has_tag and args.bump_type):
 		new_version = project.bump_version(args.bump_type)
-		[project.set_version(new_version, file) for file in versioned_files]
+		[project.set_version(new_version, file) for file in project.versioned_files]
 
 		string = 'Bump from version %s to %s' % (project.version, new_version)
 	else:  # set the version
 		# TODO: check args.version validity
 		new_version = args.version
-		[project.set_version(new_version, file) for file in versioned_files]
+		[project.set_version(new_version, file) for file in project.versioned_files]
 		string = 'Set to version %s' % new_version
 
 	if (args.version or (args.bump_type and project.has_tag)):
 		message = args.commit_format.format(version=new_version)
-		git.add(versioned_files)
+		git.add(project.versioned_files)
 		git.commit(message)
 
 	if (args.tag and project.version):
