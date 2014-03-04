@@ -73,15 +73,17 @@ def main():
 			"your changes or stash the following files and try again:\n" %
 			"\n".join(project.dirty_files))
 	elif (project.has_tag and args.bump_type):
-		new_version = project.bump_version(args.bump_type)
-		[project.set_version(new_version, file) for file in project.versioned_files]
+		new_version = project.bump(args.bump_type)
+		project.set_version(new_version)
 
 		string = 'Bump from version %s to %s' % (project.version, new_version)
 	else:  # set the version
-		# TODO: check args.version validity
 		new_version = args.version
-		[project.set_version(new_version, file) for file in project.versioned_files]
-		string = 'Set to version %s' % new_version
+		if not project.check_version(new_version):
+			raise Exception("Invalid version number. Please use x.y.z format.")
+		else:
+			project.set_versions(new_version)
+			string = 'Set to version %s' % new_version
 
 	if (args.version or (args.bump_type and project.has_tag)):
 		message = args.commit_format.format(version=new_version)

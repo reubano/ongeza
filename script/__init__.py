@@ -53,7 +53,7 @@ class Project(object):
 	def versioned_files(self):
 		# Get list of files with version metadata.
 		files = os.listdir(self.dir)
-		file_name = ('pearfarm.spec', 'setup.cfg', 'setup.py')
+		file_name = ('pearfarm.spec', 'setup.cfg', 'setup.py', '__init__.py')
 		file_ext = ('.xml', '.json')
 		versioned_files = filter(lambda x: x.endswith(file_ext), files)
 		[versioned_files.append(f) for f in files if f in file_name]
@@ -74,48 +74,40 @@ class Project(object):
 	def dev_version(self):
 		return map(int, self.version.split('.'))
 
-	def set_version(self, new_version, file, dir, pattern=None):
+	def set_versions(self, new_version, pattern=None, i=0):
+		try:
+			file = self.versioned_files[i]
+			i++
+		except KeyError:
+			return
+
 		if not self.version:
 			# find lines in file containing pattern
-			cmd = 'cd %s; grep -ine "%s" %s' % (dir, pattern, file)
-			lines = check_output(cmd, shell=True)
+			cmd = 'cd %s; grep -ine "%s" %s' % (self.dir, pattern, file)
+			lines = sh(cmd, True)
 
 			# find first line containing a version number
 			cmd = 'echo "%s" | grep -im1 "[0-9]*\.[0-9]*\.[0-9]*"' % (lines)
-			rep_line = check_output(cmd, shell=True)
+			rep_line = sh(cmd, True)
 			repl_line_num = rep_line.split(':')[0]
 
 			# replace with new version number
 			cmd = ("cd %s; sed -i '' '%ss/[0-9]*\.[0-9]*\.[0-9]*/%s/g' %s"
-				% (dir, repl_line_num, new_version, file))
+				% (self.dir, repl_line_num, new_version, file))
 		else:
+			# search for current version number and replace with new version
+			# number
 			cmd = ("cd %s; sed -i '' 's/%s/%s/g' %s"
-				% (dir, self.version, new_version, file))
+				% (self.dir, self.version, new_version, file))
 
 		# TODO: add check to see if any files were changed. Use git.
-		return call(cmd, shell=True)
+		sh(cmd)
+		return self.set_versions(new_version, pattern, i)
 
-	def bump_version(self, bump_type):
-		switch = {
-			'm': lambda: [self.version[0] + 1, 0, 0],
-			'n': lambda: [self.version[0], self.version[1] + 1, 0],
-			'p': lambda: [self.version[0], self.version[1], self.version[2] + 1]}
-
-		return '.'.join(map(str, switch.get(bump_type)()))
-
-	@property
-	def codename(self):
-		if self.last_release:
-			return self.last_release.codename
-
-	@property
-	def last_release(self):
-		if self.release_count > 0:
-			return self.releases[-1]
-
-	@property
-	def release_count(self):
-		return len(self.releases)
+	def check_version(self, new_version):
+			cmd = "echo %s | sed 's/[0-9]*\.[0-9]*\.[0-9]*/true/g'" % (
+				new_version)
+			return sh(cmd, True) is 'true'
 
 	@property
 	def last_tag(self, tags):
