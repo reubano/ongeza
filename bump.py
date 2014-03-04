@@ -138,12 +138,15 @@ def main():
 
 			string = 'Set to version %s' % newVersion
 
-		if args.tag and (args.version or (args.bumpType and isTagged)):
-			version = (newVersion or args.version)
-			message = 'Bump to version %s' % version
+		if (args.version or (args.bumpType and isTagged)):
+			message = 'Bump to version %s' % newVersion
 			gitAdd(versionedFiles, args.dir)
 			gitCommit(message, args.dir)
+
+		if (args.tag and version):
 			gitTag(version, args.dir)
+		elif args.tag:
+			string = "No version found to tag"
 
 		print('%s' % (string))
 	except Exception as err:
