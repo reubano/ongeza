@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-""" A script to test lego functionality """
+""" A script to test bump functionality """
 
 import os
 import sys

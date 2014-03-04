@@ -2,17 +2,17 @@
 # -*- coding: utf-8 -*-
 """
 
-lego
+bump
 ----
 
-compares ebay and amazon lego set prices
+An automated way to follow the Semantic Versioning Specification
 
 """
 
-__title__ = 'lego'
-__package_name__ = 'lego'
+__title__ = 'bump'
+__package_name__ = 'bump'
 __author__ = 'Reuben Cummings'
-__description__ = 'compares ebay and amazon lego set prices'
+__description__ = 'An automated way to follow the Semantic Versioning Specification'
 __email__ = 'reubano@gmail.com'
 __version__ = '0.8.1'
 __license__ = 'MIT'
