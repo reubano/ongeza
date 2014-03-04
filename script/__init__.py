@@ -22,8 +22,8 @@ import os
 from subprocess import call, check_output
 
 
-def sh(cmd):
-	call(cmd, shell=True)
+def sh(cmd, output=False):
+	check_output(cmd, shell=True) if output else check_call(cmd, shell=True)
 
 
 class Project(object):
@@ -195,32 +195,23 @@ class Git(object):
 		self.dir = dir
 
 	@property
-	def current_tag(self):
-		"""
-		Returns
-		-------
-		string of the current git tag on the git index, not the latest
-			tag version created.
-		"""
-		return sh("git describe").strip()
-
-	@property
-	def tags(self):
-		"""
-		Returns
-		-------
-		list of git tags, sorted by the date of the commit it points to.
-		"""
-		return sh("git for-each-ref --format='%(tag)' refs/tags").splitlines()
-
-	@property
 	def is_clean(self):
 		"""
 		Returns
 		-------
 		boolean if there is a dirty index.
 		"""
-		return str(sh("git diff --quiet")) == "0"
+		return sh("cd %s; git diff --quiet" % self.dir)
+
+	@property
+	def dirty_files(self):
+		"""
+		Returns
+		-------
+		list of string names of the dirty files.
+		"""
+		files = sh("cd %s; git diff --minimal --numstat" % self.dir, True)
+		return [x.split("\t")[-1] for x in files.splitlines()]
 
 	def add(self, files):
 		files = ' '.join(files)
@@ -232,15 +223,6 @@ class Git(object):
 	def tag(self, message, version):
 		cmd = "cd %s; git tag -sm '%s' v%s" % (self.dir, message, version)
 		return call(cmd, shell=True)
-
-	def diff_files(self):
-		"""
-		Returns
-		-------
-		list of string names of the dirty files.
-		"""
-		files = sh("git diff --minimal --numstat")
-		return [x.split("\t")[-1] for x in files.splitlines()]
 
 	def stash(self):
 		"""
@@ -255,20 +237,3 @@ class Git(object):
 		"""
 		# don't call --all here on purpose..
 		sh("git push && git push --tags")
-
-	def ensure_clean_index(self):
-		"""
-		ensures the current git staging index has no uncommitted or stashed changes.
-
-		"""
-		if self.is_clean():
-			return True
-		files = self.diff_files()
-		msg = """
-		cannot bump the version with a dirty git index.
-		fix uncommitted files by stashing, committing,
-		or resetting the following files:
-
-		{}
-		""".format("\n	".join(files))
-		raise Exception(msg)

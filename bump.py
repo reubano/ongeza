@@ -67,6 +67,11 @@ def main():
 		raise Exception("No git tags found, please run with the '-s' option")
 	elif (project.has_tag and not args.bump_type and not args.version):
 		string = 'Current version: %s' % project.version
+	elif not git.is_clean():
+		raise Exception(
+			"Cant bump the version with a dirty git index. Please commit "
+			"your changes or stash the following files and try again:\n" %
+			"\n".join(project.dirty_files))
 	elif (project.has_tag and args.bump_type):
 		new_version = project.bump_version(args.bump_type)
 		[project.set_version(new_version, file) for file in project.versioned_files]
