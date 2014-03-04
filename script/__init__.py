@@ -139,6 +139,7 @@ class Project(object):
 		else:
 			return '.'.join(map(str, switch.get(bump_type)()))
 
+
 class Git(object):
 	"""
 	class representing Git commands.
