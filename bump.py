@@ -6,7 +6,7 @@
 import os
 from sys import exit
 from argparse import RawTextHelpFormatter, ArgumentParser
-from script import Project, Git, fail
+from script import Project, Git
 
 parser = ArgumentParser(
 	description="description: bump makes following the Semantic Versioning"
@@ -60,7 +60,7 @@ args = parser.parse_args()
 
 
 def main():
-	project = Project()
+	project = Project(args.dir)
 	git = Git(args.dir)
 
 	files = os.listdir(args.dir)
