@@ -75,7 +75,7 @@ def main():
 				"\n".join(project.dirty_files))
 		elif (project.has_tag and args.bump_type):
 			new_version = project.bump(args.bump_type)
-			project.set_version(new_version)
+			project.set_versions(new_version)
 
 			msg = 'Bump from version %s to %s' % (project.version, new_version)
 		else:  # set the version
