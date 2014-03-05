@@ -156,8 +156,8 @@ def main():
 		gitAdd(versionedFiles, args.dir)
 		gitCommit(message, args.dir)
 
-	if (args.tag and version):
-		gitTag(version, args.dir)
+	if (args.tag and newVersion):
+		gitTag(newVersion, args.dir)
 	elif args.tag:
 		string = "No version found to tag"
 
