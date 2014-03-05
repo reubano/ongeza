@@ -60,7 +60,10 @@ def getVersion(gitDir):
 def setVersion(oldVersion, newVersion, file, dir, pattern=None):
 	if not oldVersion:
 		# find lines in file containing pattern
-		cmd = 'cd %s; grep -ine "%s" %s' % (dir, pattern, file)
+		if pattern:
+			cmd = 'cd %s; grep -ine "%s" %s' % (dir, pattern, file)
+		else:
+			cmd = 'cd %s; grep -ine "" %s' % (dir, file)
 		lines = check_output(cmd, shell=True)
 
 		# find first line containing a version number
