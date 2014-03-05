@@ -23,8 +23,8 @@ group.add_argument(
 		"  n = minor - 1.y.0\n"
 		"  p = patch - 1.0.z")
 
-group.add_argument(
-	'-s', '--set', dest='version', type=str, help='set arbitrary version number')
+parser.add_argument(
+	'-s', '--set', dest='version', action='store', help='set arbitrary version number')
 
 parser.add_argument(
 	'-v', '--verbose', dest='verbose', action='store_true',
@@ -115,6 +115,7 @@ def main():
 	versionedFiles = filter(lambda x: x.endswith(fileExt), files)
 	[versionedFiles.append(f) for f in files if f in fileName]
 	isTagged = hasTag(args.dir)
+	bumped = False
 
 	if isTagged:
 		curVersion = getVersion(args.dir)
@@ -126,19 +127,31 @@ def main():
 		string = 'Current version: %s' % curVersion
 	elif (isTagged and args.bumpType):
 		newVersion = bumpVersion(args.bumpType, devVersion)
-		[setVersion(curVersion, newVersion, file, args.dir)
+		bumped = [setVersion(curVersion, newVersion, file, args.dir)
 			for file in versionedFiles]
 
-		string = 'Bump from version %s to %s' % (curVersion, newVersion)
-	else: # set the version
+		bumped = reduce(lambda x, y: x or y, bumped, 1)
+
+		if bumped:
+			string = 'Bump from version %s to %s' % (curVersion, newVersion)
+		else:
+			string = 'No version found to bump'
+	elif args.version: # set the version
 		# TODO: check args.version validity
 		newVersion = args.version
-		[setVersion(None, newVersion, file, args.dir)
+		bumped = [setVersion(None, newVersion, file, args.dir)
 			for file in versionedFiles]
 
-		string = 'Set to version %s' % newVersion
+		bumped = reduce(lambda x, y: x or y, bumped, 1)
 
-	if (args.version or (args.bumpType and isTagged)):
+		if bumped:
+			string = 'Set to version %s' % newVersion
+		else:
+			string = 'No version found to set'
+	else:
+		string = 'No version found to display'
+
+	if (bumped):
 		message = 'Bump to version %s' % newVersion
 		gitAdd(versionedFiles, args.dir)
 		gitCommit(message, args.dir)
