@@ -82,7 +82,7 @@ def setVersion(oldVersion, newVersion, file, dir, pattern=None):
 		cmd = ("cd %s; sed -i '' 's/%s/%s/g' %s"
 			% (dir, oldVersion, newVersion, file))
 
-	return call(cmd, shell=True) if cmd else False
+	return call(cmd, shell=True) if cmd else 1
 
 def getDevVersion(version):
 	return map(int, version.split('.'))
@@ -130,7 +130,7 @@ def main():
 		bumped = [setVersion(curVersion, newVersion, file, args.dir)
 			for file in versionedFiles]
 
-		bumped = reduce(lambda x, y: x or y, bumped, 1)
+		bumped = reduce(lambda x, y: (x == 0) or (y == 0), bumped, 1)
 
 		if bumped:
 			string = 'Bump from version %s to %s' % (curVersion, newVersion)
@@ -142,7 +142,7 @@ def main():
 		bumped = [setVersion(None, newVersion, file, args.dir)
 			for file in versionedFiles]
 
-		bumped = reduce(lambda x, y: x or y, bumped, 1)
+		bumped = reduce(lambda x, y: (x == 0) or (y == 0), bumped, 1)
 
 		if bumped:
 			string = 'Set to version %s' % newVersion
