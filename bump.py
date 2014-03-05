@@ -6,7 +6,7 @@
 import os
 from sys import exit
 from argparse import RawTextHelpFormatter, ArgumentParser
-from subprocess import call, check_output
+from subprocess import call, check_output, CalledProcessError
 
 parser = ArgumentParser(
 	description="description: bump makes following the Semantic Versioning"
@@ -64,21 +64,25 @@ def setVersion(oldVersion, newVersion, file, dir, pattern=None):
 			cmd = 'cd %s; grep -ine "%s" %s' % (dir, pattern, file)
 		else:
 			cmd = 'cd %s; grep -ine "" %s' % (dir, file)
-		lines = check_output(cmd, shell=True)
 
-		# find first line containing a version number
-		cmd = 'echo "%s" | grep -im1 "[0-9]*\.[0-9]*\.[0-9]*"' % (lines)
-		repLine = check_output(cmd, shell=True)
-		replLineNum = repLine.split(':')[0]
+		try:
+			lines = check_output(cmd, shell=True)
 
-		# replace with new version number
-		cmd = ("cd %s; sed -i '' '%ss/[0-9]*\.[0-9]*\.[0-9]*/%s/g' %s"
-			% (dir, replLineNum, newVersion, file))
+			# find first line containing a version number
+			cmd = 'echo "%s" | grep -im1 "[0-9]*\.[0-9]*\.[0-9]*"' % (lines)
+			repLine = check_output(cmd, shell=True)
+			replLineNum = repLine.split(':')[0]
+		except CalledProcessError:
+			cmd = None
+		else:
+			# replace with new version number
+			cmd = ("cd %s; sed -i '' '%ss/[0-9]*\.[0-9]*\.[0-9]*/%s/g' %s"
+				% (dir, replLineNum, newVersion, file))
 	else:
 		cmd = ("cd %s; sed -i '' 's/%s/%s/g' %s"
 			% (dir, oldVersion, newVersion, file))
 
-	return call(cmd, shell=True)
+	return call(cmd, shell=True) if cmd else False
 
 def getDevVersion(version):
 	return map(int, version.split('.'))
