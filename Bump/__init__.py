@@ -56,11 +56,15 @@ class Project(object):
 	@property
 	def versioned_files(self):
 		# Get list of files with version metadata.
-		files = os.listdir(self.dir)
-		file_name = ('pearfarm.spec', 'setup.cfg', 'setup.py', '__init__.py')
-		file_ext = ('.xml', '.json')
-		versioned_files = filter(lambda x: x.endswith(file_ext), files)
-		[versioned_files.append(f) for f in files if f in file_name]
+		versioned_files = []
+		file_names = (
+			'pearfarm.spec', 'setup.cfg', 'setup.py', '__init__.py',
+			'*.xml', '*.json')
+
+		for file in file_names:
+			files = sh("find . -name '%s'" % file, True).splitlines()
+			versioned_files.extend(files)
+
 		return versioned_files
 
 	@property
