@@ -116,14 +116,14 @@ class Project(object):
 				cmd = 'cd %s; grep -ine "" %s' % (dir, file)
 
 			try:
-				lines = sh(cmd)
+				lines = sh(cmd, True)
 			except CalledProcessError:
 				lines = None
 
 			if lines:
 				# find first line containing a version number
 				cmd = 'echo "%s" | grep -im1 "[0-9]*\.[0-9]*\.[0-9]*"' % (lines)
-				rep_line = sh(cmd)
+				rep_line = sh(cmd, True)
 				rep_line_num = rep_line.split(':')[0]
 				# replace with new version number
 				cmd = ("cd %s; sed -i '' '%ss/[0-9]*\.[0-9]*\.[0-9]*/%s/g' %s"
