@@ -19,7 +19,7 @@ __license__ = 'MIT'
 __copyright__ = 'Copyright 2014 Reuben Cummings'
 
 import os
-from subprocess import call, check_output
+from subprocess import call, check_output, CalledProcessError
 
 
 def sh(cmd, output=False):
@@ -107,17 +107,24 @@ class Project(object):
 
 		if not self.version:
 			# find lines in file containing pattern
-			cmd = 'cd %s; grep -ine "%s" %s' % (self.dir, pattern, file)
-			lines = sh(cmd, True)
+			if pattern:
+				cmd = 'cd %s; grep -ine "%s" %s' % (dir, pattern, file)
+			else:
+				cmd = 'cd %s; grep -ine "" %s' % (dir, file)
 
-			# find first line containing a version number
-			cmd = 'echo "%s" | grep -im1 "[0-9]*\.[0-9]*\.[0-9]*"' % (lines)
-			rep_line = sh(cmd, True)
-			repl_line_num = rep_line.split(':')[0]
+			try:
+				lines = sh(cmd)
 
-			# replace with new version number
-			cmd = ("cd %s; sed -i '' '%ss/[0-9]*\.[0-9]*\.[0-9]*/%s/g' %s"
-				% (self.dir, repl_line_num, new_version, file))
+				# find first line containing a version number
+				cmd = 'echo "%s" | grep -im1 "[0-9]*\.[0-9]*\.[0-9]*"' % (lines)
+				rep_line = sh(cmd)
+				rep_line_num = rep_line.split(':')[0]
+			except CalledProcessError:
+				cmd = None
+			else:
+				# replace with new version number
+				cmd = ("cd %s; sed -i '' '%ss/[0-9]*\.[0-9]*\.[0-9]*/%s/g' %s"
+					% (dir, rep_line_num, new_version, file))
 		else:
 			# search for current version number and replace with new version
 			# number
@@ -125,8 +132,11 @@ class Project(object):
 				% (self.dir, self.version, new_version, file))
 
 		# TODO: add check to see if any files were changed. Use git.
-		sh(cmd)
-		self.bumped = True
+
+		if cmd:
+			sh(cmd)
+			self.bumped = True
+
 		return self.set_versions(new_version, pattern, i)
 
 	def check_version(self, new_version):
