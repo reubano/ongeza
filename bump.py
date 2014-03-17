@@ -79,8 +79,11 @@ def main():
 			new_version = project.bump(args.bump_type)
 			project.set_versions(new_version)
 
-			msg = 'Bumped from version %s to %s' % (
-				project.version, new_version)
+			if project.bumped:
+				msg = 'Bumped from version %s to %s' % (
+					project.version, new_version)
+			else:
+				raise Exception("Couldn't find a version to bump.")
 		else:  # set the version
 			new_version = args.version
 			if not project.check_version(new_version):
