@@ -6,7 +6,8 @@
 import os
 from sys import exit
 from argparse import RawTextHelpFormatter, ArgumentParser
-from subprocess import call, check_output, CalledProcessError
+from script import Project, Git
+
 
 parser = ArgumentParser(
 	description="description: bump makes following the Semantic Versioning"
@@ -17,22 +18,40 @@ parser = ArgumentParser(
 
 group = parser.add_mutually_exclusive_group()
 group.add_argument(
-	'-t', '--type', dest='bumpType', type=str, choices=['m', 'n', 'p'],
+	'-t', '--type', dest='bump_type', action='store', choices=['m', 'n', 'p'],
 	help="version bump type:\n"
-		"  m = major - x.0.0\n"
-		"  n = minor - 1.y.0\n"
-		"  p = patch - 1.0.z")
+		"  m = major - [x].0.0\n"
+		"  n = minor - x.[y].0\n"
+		"  p = patch - x.y.[z]")
+
+group.add_argument(
+	'-s', '--set', dest='version', action='store',
+	help='set arbitrary version number')
 
 parser.add_argument(
-	'-s', '--set', dest='version', action='store', help='set arbitrary version number')
-
-parser.add_argument(
-	'-v', '--verbose', dest='verbose', action='store_true',
+	'-v', '--verbose', action='store_true',
 	help='increase output verbosity')
 
 parser.add_argument(
-	'-g', '--tag', dest='tag', action='store_true', help='tag git repo with the'
-	' bumped version number')
+	'-S', '--skip-commit', action='store_true', help='skip commiting version'
+	' bumped files')
+
+parser.add_argument(
+	'-T', '--tag', action='store_true', help='tag git repo with the bumped '
+	'version number')
+
+group.add_argument(
+	'-p', '--push', action='store_true', help='push to the remote origin')
+
+parser.add_argument(
+	'-f', '--tag-format', action='store',
+	default='Version {version} Release',
+	help='git tag messgae format')
+
+parser.add_argument(
+	'-F', '--commit-format', action='store',
+	default='Bump to version {version}',
+	help='git commit message format')
 
 parser.add_argument(
 	dest='dir', nargs='?', default=os.curdir, type=str,
@@ -40,128 +59,55 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-def hasTag(gitDir):
-	# Check if repo has any git tags.
-	if os.path.isdir(gitDir):
-		return check_output('cd %s; git tag' % (gitDir), shell=True)
-	else:
-		raise Exception('%s is not a directory' % (gitDir))
-
-def getVersion(gitDir):
-	# Get the current release version from git.
-	if os.path.isdir(gitDir):
-		cmd = 'cd %s; git tag | grep v | tail -n1' % (gitDir)
-		version = check_output(cmd, shell=True)
-		version = version.lstrip('v').rstrip()
-		return version.split('-')[0]
-	else:
-		raise Exception('%s is not a directory' % (gitDir))
-
-def setVersion(oldVersion, newVersion, file, dir, pattern=None):
-	if not oldVersion:
-		# find lines in file containing pattern
-		if pattern:
-			cmd = 'cd %s; grep -ine "%s" %s' % (dir, pattern, file)
-		else:
-			cmd = 'cd %s; grep -ine "" %s' % (dir, file)
-
-		try:
-			lines = check_output(cmd, shell=True)
-
-			# find first line containing a version number
-			cmd = 'echo "%s" | grep -im1 "[0-9]*\.[0-9]*\.[0-9]*"' % (lines)
-			repLine = check_output(cmd, shell=True)
-			replLineNum = repLine.split(':')[0]
-		except CalledProcessError:
-			cmd = None
-		else:
-			# replace with new version number
-			cmd = ("cd %s; sed -i '' '%ss/[0-9]*\.[0-9]*\.[0-9]*/%s/g' %s"
-				% (dir, replLineNum, newVersion, file))
-	else:
-		cmd = ("cd %s; sed -i '' 's/%s/%s/g' %s"
-			% (dir, oldVersion, newVersion, file))
-
-	return call(cmd, shell=True) if cmd else 1
-
-def getDevVersion(version):
-	return map(int, version.split('.'))
-
-def gitAdd(files, gitDir):
-	files = ' '.join(files)
-	return call('cd %s; git add %s' % (gitDir, files), shell=True)
-
-def gitCommit(message, gitDir):
-	return call("cd %s; git commit -m '%s'" % (gitDir, message), shell=True)
-
-def gitTag(version, gitDir):
-	cmd = ("cd %(g)s; git tag -sm 'Version %(v)s Release' v%(v)s"
-		% {'g': gitDir, 'v': version})
-
-	return call(cmd, shell=True)
-
-def bumpVersion(bumpType, currVersion):
-	switch = {
-		'm': lambda: [currVersion[0] + 1, 0, 0],
-		'n': lambda: [currVersion[0], currVersion[1] + 1, 0],
-		'p': lambda: [currVersion[0], currVersion[1], currVersion[2] + 1]}
-
-	return '.'.join(map(str, switch.get(bumpType)()))
 
 def main():
-	files = os.listdir(args.dir)
-	fileName = ('pearfarm.spec', 'setup.cfg', 'setup.py', )
-	fileExt = ('.xml', '.json')
-	versionedFiles = filter(lambda x: x.endswith(fileExt), files)
-	[versionedFiles.append(f) for f in files if f in fileName]
-	isTagged = hasTag(args.dir)
-	bumped = False
+	try:
+		project = Project(args.dir)
+		git = Git(args.dir)
 
-	if isTagged:
-		curVersion = getVersion(args.dir)
-		devVersion = getDevVersion(curVersion)
+		if (not project.version and args.bump_type):
+			raise Exception("No git tags found, please run with the '-s' option")
+		elif (project.version and not args.bump_type and not args.version):
+			msg = 'Current version: %s' % project.version
+		elif not project.is_clean:
+			raise Exception(
+				"Can't bump the version with a dirty git index. Please commit "
+				"your changes or stash the following files and try again:\n%s" %
+				"\n".join(project.dirty_files))
+		elif (project.version and args.bump_type):
+			new_version = project.bump(args.bump_type)
+			project.set_versions(new_version)
 
-	if (not isTagged and args.bumpType):
-		string = "No git tags found, please use the '-s' option"
-	elif (isTagged and not args.bumpType and not args.version):
-		string = 'Current version: %s' % curVersion
-	elif (isTagged and args.bumpType):
-		newVersion = bumpVersion(args.bumpType, devVersion)
-		bumped = [setVersion(curVersion, newVersion, file, args.dir)
-			for file in versionedFiles]
+			msg = 'Bumped from version %s to %s' % (project.version, new_version)
+		else:  # set the version
+			new_version = args.version
+			if not project.check_version(new_version):
+				raise Exception(
+					'Invalid version: %i. Please use x.y.z format.' % new_version)
+			else:
+				project.set_versions(new_version)
+				msg = 'Set to version %s' % new_version
 
-		bumped = reduce(lambda x, y: (x == 0) or (y == 0), bumped, 1)
+		if (project.bumped and not args.skip_commit):
+			message = args.commit_format.format(version=new_version)
+			git.add(project.versioned_files)
+			git.commit(message)
 
-		if bumped:
-			string = 'Bump from version %s to %s' % (curVersion, newVersion)
-		else:
-			string = 'No version found to bump'
-	elif args.version: # set the version
-		# TODO: check args.version validity
-		newVersion = args.version
-		bumped = [setVersion(None, newVersion, file, args.dir)
-			for file in versionedFiles]
+		if (project.bumped and args.tag and project.version):
+			message = args.tag_format.format(version=project.version)
+			git.tag(message, project.version)
+		elif args.tag:
+			raise Exception("Couldn't find a version to bump. Nothing to tag.")
 
-		bumped = reduce(lambda x, y: (x == 0) or (y == 0), bumped, 1)
+		if (project.bumped and args.push):
+			git.push()
+		elif args.push:
+			raise Exception("Couldn't find a version to bump. Nothing to push.")
 
-		if bumped:
-			string = 'Set to version %s' % newVersion
-		else:
-			string = 'No version found to set'
-	else:
-		string = 'No version found to display'
-
-	if (bumped):
-		message = 'Bump to version %s' % newVersion
-		gitAdd(versionedFiles, args.dir)
-		gitCommit(message, args.dir)
-
-	if (args.tag and newVersion):
-		gitTag(newVersion, args.dir)
-	elif args.tag:
-		string = "No version found to tag"
-
-	print('%s' % string)
+		print(msg)
+	except Exception as err:
+		print err
+		exit(1)
 
 	exit(0)
 
