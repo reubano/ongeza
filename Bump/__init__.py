@@ -110,10 +110,9 @@ class Project(object):
 			return
 
 		if not self.version:
-			# find lines in file containing pattern
-			if pattern:
+			if pattern: # find lines in file containing pattern
 				cmd = 'cd %s; grep -ine "%s" %s' % (dir, pattern, file)
-			else:
+			else: # get all lines in file
 				cmd = 'cd %s; grep -ine "" %s' % (dir, file)
 
 			try:
