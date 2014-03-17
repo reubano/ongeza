@@ -14,7 +14,7 @@ __package_name__ = 'bump'
 __author__ = 'Reuben Cummings'
 __description__ = 'An automated way to follow the Semantic Versioning Specification'
 __email__ = 'reubano@gmail.com'
-__version__ = '0.9.0'
+__version__ = '0.10.0'
 __license__ = 'MIT'
 __copyright__ = 'Copyright 2014 Reuben Cummings'
 
