@@ -6,7 +6,7 @@
 import os
 from sys import exit
 from argparse import RawTextHelpFormatter, ArgumentParser
-from script import Project, Git
+from Bump import Project, Git
 
 
 parser = ArgumentParser(
@@ -66,7 +66,8 @@ def main():
 		git = Git(args.dir)
 
 		if (not project.version and args.bump_type):
-			raise Exception("No git tags found, please run with the '-s' option")
+			raise Exception(
+				"No git tags found, please run with the '-s' option")
 		elif (project.version and not args.bump_type and not args.version):
 			msg = 'Current version: %s' % project.version
 		elif not project.is_clean:
@@ -78,12 +79,14 @@ def main():
 			new_version = project.bump(args.bump_type)
 			project.set_versions(new_version)
 
-			msg = 'Bumped from version %s to %s' % (project.version, new_version)
+			msg = 'Bumped from version %s to %s' % (
+				project.version, new_version)
 		else:  # set the version
 			new_version = args.version
 			if not project.check_version(new_version):
 				raise Exception(
-					'Invalid version: %i. Please use x.y.z format.' % new_version)
+					'Invalid version: %i. Please use x.y.z format.' % (
+						new_version))
 			else:
 				project.set_versions(new_version)
 				msg = 'Set to version %s' % new_version
