@@ -2,9 +2,6 @@
 
 """ A script to test bump functionality """
 
-import os
-import sys
-
 from sys import exit
 from scripttest import TestFileEnvironment
 
