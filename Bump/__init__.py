@@ -114,29 +114,27 @@ class Project(object):
 
 			try:
 				lines = sh(cmd)
+			except CalledProcessError:
+				lines = None
 
+			if lines:
 				# find first line containing a version number
 				cmd = 'echo "%s" | grep -im1 "[0-9]*\.[0-9]*\.[0-9]*"' % (lines)
 				rep_line = sh(cmd)
 				rep_line_num = rep_line.split(':')[0]
-			except CalledProcessError:
-				cmd = None
-			else:
 				# replace with new version number
 				cmd = ("cd %s; sed -i '' '%ss/[0-9]*\.[0-9]*\.[0-9]*/%s/g' %s"
 					% (dir, rep_line_num, new_version, file))
+			else:
+				cmd = None
 		else:
 			# search for current version number and replace with new version
 			# number
 			cmd = ("cd %s; sed -i '' 's/%s/%s/g' %s"
 				% (self.dir, self.version, new_version, file))
 
-		# TODO: add check to see if any files were changed. Use git.
-
-		if cmd:
-			sh(cmd)
-			self.bumped = True
-
+		sh(cmd) if cmd else None
+		self.bumped = not self.is_clean
 		return self.set_versions(new_version, pattern, i)
 
 	def check_version(self, new_version):
