@@ -123,9 +123,9 @@ class Project(object):
 
 		if not self.version:
 			if pattern: # find lines in file containing pattern
-				cmd = 'cd %s; grep -ine "%s" %s' % (dir, pattern, file)
+				cmd = 'cd %s; grep -ine "%s" %s' % (self.dir, pattern, file)
 			else: # get all lines in file
-				cmd = 'cd %s; grep -ine "" %s' % (dir, file)
+				cmd = 'cd %s; grep -ine "" %s' % (self.dir, file)
 
 			try:
 				lines = sh(cmd, True)
@@ -133,13 +133,20 @@ class Project(object):
 				lines = None
 
 			if lines:
+				# escape double quotes
+				escaped = lines.replace('"', '\\"')
 				# find first line containing a version number
-				cmd = 'echo "%s" | grep -im1 "[0-9]*\.[0-9]*\.[0-9]*"' % (lines)
-				rep_line = sh(cmd, True)
-				rep_line_num = rep_line.split(':')[0]
-				# replace with new version number
-				cmd = ("cd %s; sed -i '' '%ss/[0-9]*\.[0-9]*\.[0-9]*/%s/g' %s"
-					% (dir, rep_line_num, new_version, file))
+				cmd = 'echo "%s" | grep -im1 "[0-9]*\.[0-9]*\.[0-9]*"' % escaped
+				try:
+					rep_line = sh(cmd, True)
+				except Exception:
+					cmd = None
+				else:
+					rep_line_num = rep_line.split(':')[0]
+					# replace with new version number
+					sh("cd %s" % self.dir)
+					cmd = ("sed -i '' '%ss/[0-9]*\.[0-9]*\.[0-9]*/%s/g' %s"
+						% (rep_line_num, new_version, file))
 			else:
 				cmd = None
 		else:
