@@ -88,7 +88,7 @@ def main():
 			new_version = args.version
 			if not project.check_version(new_version):
 				raise Exception(
-					'Invalid version: %i. Please use x.y.z format.' % (
+					"Invalid version: '%s'. Please use x.y.z format." % (
 						new_version))
 			else:
 				project.set_versions(new_version)
