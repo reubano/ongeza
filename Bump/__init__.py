@@ -160,9 +160,9 @@ class Project(object):
 		return self.set_versions(new_version, pattern, i)
 
 	def check_version(self, new_version):
-			cmd = "echo %s | sed 's/[0-9]*\.[0-9]*\.[0-9]*/true/g'" % (
-				new_version)
-			return sh(cmd, True) is 'true'
+			cmd = ("echo %s | sed 's/[0-9]*\.[0-9]*\.[0-9]*/@/g'"
+				% new_version)
+			return sh(cmd, True).splitlines()[0] is '@'
 
 	def bump(self, bump_type):
 		"""
