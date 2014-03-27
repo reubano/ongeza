@@ -136,7 +136,7 @@ class Project(object):
 				# escape double quotes
 				escaped = lines.replace('"', '\\"')
 				# find first line containing a version number
-				cmd = 'echo "%s" | grep -im1 "[0-9]*\.[0-9]*\.[0-9]*"' % escaped
+				cmd = 'echo "%s" | grep -m1 "[0-9]*\.[0-9]*\.[0-9]*"' % escaped
 				try:
 					rep_line = sh(cmd, True)
 				except Exception:
