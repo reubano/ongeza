@@ -93,6 +93,15 @@ class Project(object):
 		return sh("cd %s; git diff --quiet" % self.dir)
 
 	@property
+	def is_dirty(self):
+		"""
+		Returns
+		-------
+		boolean if there is a dirty index.
+		"""
+		return not self.is_clean
+
+	@property
 	def dirty_files(self):
 		"""
 		Returns
@@ -137,7 +146,7 @@ class Project(object):
 				% (self.dir, self.version, new_version, file))
 
 		sh(cmd) if cmd else None
-		self.bumped = not self.is_clean
+		self.bumped = self.is_dirty
 		return self.set_versions(new_version, pattern, i)
 
 	def check_version(self, new_version):

@@ -70,7 +70,7 @@ def main():
 				"No git tags found, please run with the '-s' option")
 		elif (project.version and not args.bump_type and not args.version):
 			msg = 'Current version: %s' % project.version
-		elif not project.is_clean:
+		elif project.is_dirty:
 			raise Exception(
 				"Can't bump the version with a dirty git index. Please commit "
 				"your changes or stash the following files and try again:\n%s" %
