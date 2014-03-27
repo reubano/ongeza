@@ -19,6 +19,7 @@ __license__ = 'MIT'
 __copyright__ = 'Copyright 2014 Reuben Cummings'
 
 import os
+from fnmatch import fnmatch
 from subprocess import call, check_output, CalledProcessError
 
 
@@ -56,14 +57,16 @@ class Project(object):
 	@property
 	def versioned_files(self):
 		# Get list of files with version metadata.
+		cmd = "git ls-tree --full-tree --name-only -r HEAD"
+		git_files = sh(cmd, True).splitlines()
 		versioned_files = []
-		file_names = (
+		file_names = [
 			'pearfarm.spec', 'setup.cfg', 'setup.py', '__init__.py',
-			'*.xml', '*.json')
+			'*.xml', 'package.json']
 
-		for file in file_names:
-			files = sh("find . -name '%s'" % file, True).splitlines()
-			versioned_files.extend(files)
+		for git_file in git_files:
+			if any(fnmatch(git_file, file) for file in file_names):
+				versioned_files.append(git_file)
 
 		return versioned_files
 
