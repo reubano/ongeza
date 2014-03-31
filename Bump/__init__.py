@@ -61,7 +61,7 @@ class Project(object):
 		git_files = sh(cmd, True).splitlines()
 		versioned_files = []
 		file_names = [
-			'pearfarm.spec', 'setup.cfg', 'setup.py', '__init__.py',
+			'pearfarm.spec', 'setup.cfg', 'setup.py', '*/__init__.py',
 			'*.xml', 'package.json']
 
 		for git_file in git_files:
