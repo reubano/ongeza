@@ -67,10 +67,10 @@ def main():
 
 		if (not project.version and args.bump_type):
 			raise Exception(
-				"No git tags found, please run with the '-s' option")
+				"No git tags found, please run with '-s and -T' options")
 		elif (project.version and not args.bump_type and not args.version):
 			msg = 'Current version: %s' % project.version
-		elif not project.is_clean:
+		elif project.is_dirty:
 			raise Exception(
 				"Can't bump the version with a dirty git index. Please commit "
 				"your changes or stash the following files and try again:\n%s" %
@@ -84,11 +84,11 @@ def main():
 					project.version, new_version)
 			else:
 				raise Exception("Couldn't find a version to bump.")
-		else:  # set the version
+		elif args.version:  # set the version
 			new_version = args.version
 			if not project.check_version(new_version):
 				raise Exception(
-					'Invalid version: %i. Please use x.y.z format.' % (
+					"Invalid version: '%s'. Please use x.y.z format." % (
 						new_version))
 			else:
 				project.set_versions(new_version)
@@ -99,9 +99,13 @@ def main():
 			git.add(project.versioned_files)
 			git.commit(message)
 
-		if (project.bumped and args.tag and project.version):
-			message = args.tag_format.format(version=project.version)
-			git.tag(message, project.version)
+		tag = (project.bumped and args.tag and project.version)
+		tag = (tag or (args.version and args.tag and not project.version))
+
+		if tag:
+			version = (project.version or args.version)
+			message = args.tag_format.format(version=version)
+			git.tag(message, version)
 		elif args.tag:
 			raise Exception("Couldn't find a version to bump. Nothing to tag.")
 
