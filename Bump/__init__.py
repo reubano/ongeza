@@ -74,10 +74,11 @@ class Project(object):
 	def version(self):
 		# Get the current release version from git.
 		if os.path.isdir(self.dir):
-			cmd = 'cd %s; git tag | grep v | tail -n1' % (self.dir)
-			version = sh(cmd, True)
-			version = version.lstrip('v').rstrip()
-			return version.split('-')[0]
+			cmd = 'cd %s; git tag | grep v' % (self.dir)
+			versions = sh(cmd, True).splitlines()
+			versions = [v.lstrip('v').rstrip() for v in versions]
+			versions.sort(key=lambda s: map(int, s.split('.')))
+			return versions[-1]
 		else:
 			raise Exception('%s is not a directory' % (self.dir))
 
