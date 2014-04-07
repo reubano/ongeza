@@ -47,7 +47,7 @@ setup(
 		'Topic :: Software Development :: Version Control',
 	],
 	platforms=['MacOS X', 'Windows', 'Linux'],
-	keywords='',
+	keywords='application',
 	scripts=['bump.py'],
 	install_requires=requirements,
 )
