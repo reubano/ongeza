@@ -112,18 +112,19 @@ class Project(object):
 		files = sh("cd %s; git diff --minimal --numstat" % self.dir, True)
 		return [x.split("\t")[-1] for x in files.splitlines()]
 
-	def set_versions(self, new_version, pattern=None, i=0):
+	def set_versions(self, new_version, version, **kwargs):
+		i = kwargs.get('i', 0)
+		files = kwargs.get('files', self.versioned_files)
+
 		try:
-			file = self.versioned_files[i]
+			file = files[i]
 			i += 1
 		except IndexError:
 			return
 
-		if not self.version:
-			if pattern: # find lines in file containing pattern
-				cmd = 'cd %s; grep -ine "%s" %s' % (self.dir, pattern, file)
-			else: # get all lines in file
-				cmd = 'cd %s; grep -ine "" %s' % (self.dir, file)
+		if not version:
+			# get all lines in file
+			cmd = 'cd %s; grep -ine "" %s' % (self.dir, file)
 
 			try:
 				lines = sh(cmd, True)
@@ -149,20 +150,20 @@ class Project(object):
 				cmd = None
 		else:
 			# search for current version number and replace with new version
-			# number
 			cmd = ("cd %s; sed -i '' 's/%s/%s/g' %s"
-				% (self.dir, self.version, new_version, file))
+				% (self.dir, version, new_version, file))
+			print cmd
 
 		sh(cmd) if cmd else None
 		self.bumped = self.is_dirty
-		return self.set_versions(new_version, pattern, i)
+		return self.set_versions(new_version, version, i=i, files=files)
 
 	def check_version(self, new_version):
 			cmd = ("echo %s | sed 's/[0-9]*\.[0-9]*\.[0-9]*/@/g'"
 				% new_version)
 			return sh(cmd, True).splitlines()[0] is '@'
 
-	def bump(self, bump_type):
+	def bump(self, bump_type, version):
 		"""
 		Parameters
 		----------
@@ -184,7 +185,7 @@ class Project(object):
 				'p': lambda: [version[0], version[1], version[2] + 1]}
 		except ValueError:
 			raise Exception(
-				'Invalid version: %i. Please use x.y.z format.' % self.version)
+				'Invalid version: %i. Please use x.y.z format.' % version)
 		else:
 			return '.'.join(map(str, switch.get(bump_type)()))
 
