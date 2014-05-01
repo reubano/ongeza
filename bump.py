@@ -54,6 +54,11 @@ parser.add_argument(
 	help='git commit message format')
 
 parser.add_argument(
+	'-i', '--file', action='store',
+    default=None,
+    help='the versioned file')
+
+parser.add_argument(
 	dest='dir', nargs='?', default=os.curdir, type=str,
 	help='the project directory')
 
@@ -62,7 +67,7 @@ args = parser.parse_args()
 
 def main():
 	try:
-		project = Project(args.dir)
+		project = Project(args.dir, args.file)
 		git = Git(args.dir)
 		cur_version = project.version
 

@@ -35,15 +35,19 @@ class Project(object):
 	class representing a project object.
 	"""
 
-	def __init__(self, dir, **kwargs):
+	def __init__(self, dir, file=None):
 		"""
 		Parameters
 		----------
 		dir : str
 			the project directory
+
+		file : str
+			the file to search for a version
 		"""
 		self.current_tag = None
 		self.bumped = False
+		self.file = file
 		self.dir = dir
 
 	@property
@@ -57,16 +61,22 @@ class Project(object):
 	@property
 	def versioned_files(self):
 		# Get list of files with version metadata.
-		cmd = "git ls-tree --full-tree --name-only -r HEAD"
-		git_files = sh(cmd, True).splitlines()
 		versioned_files = []
-		file_names = [
-			'pearfarm.spec', 'setup.cfg', 'setup.py', '*/__init__.py',
-			'*.xml', 'package.json']
 
-		for git_file in git_files:
-			if any(fnmatch(git_file, file) for file in file_names):
-				versioned_files.append(git_file)
+		if (self.file):
+			print self.file
+			versioned_files.append(self.file)
+		else:
+			cmd = "git ls-tree --full-tree --name-only -r HEAD"
+			git_files = sh(cmd, True).splitlines()
+
+			file_names = [
+				'pearfarm.spec', 'setup.cfg', 'setup.py', '*/__init__.py',
+				'*.xml', 'package.json']
+
+			for git_file in git_files:
+				if any(fnmatch(git_file, file) for file in file_names):
+					versioned_files.append(git_file)
 
 		return versioned_files
 
