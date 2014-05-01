@@ -44,6 +44,11 @@ class Project(object):
 
 		file : str
 			the file to search for a version
+
+		Examples
+		--------
+		>>> Project(os.curdir)  #doctest: +ELLIPSIS
+		<Bump.Project object at 0x...>
 		"""
 		self.current_tag = None
 		self.bumped = False

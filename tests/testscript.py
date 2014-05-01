@@ -8,7 +8,7 @@ from scripttest import TestFileEnvironment
 
 def main():
 	env = TestFileEnvironment('.scripttest')
-	result = env.run('bump --help')
+	result = env.run('python ../bump.py --help')
 	print('%s' % result.stdout)
 	exit(0)
 
