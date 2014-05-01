@@ -55,8 +55,8 @@ parser.add_argument(
 
 parser.add_argument(
 	'-i', '--file', action='store',
-    default=None,
-    help='the versioned file')
+	default=None,
+	help='the versioned file')
 
 parser.add_argument(
 	dest='dir', nargs='?', default=os.curdir, type=str,
