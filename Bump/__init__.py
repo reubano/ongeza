@@ -15,7 +15,7 @@ __author__ = 'Reuben Cummings'
 __description__ = 'An automated way to follow the Semantic Versioning '
 __description__ += 'Specification'
 __email__ = 'reubano@gmail.com'
-__version__ = '1.0.0'
+__version__ = '1.1.0'
 __license__ = 'MIT'
 __copyright__ = 'Copyright 2014 Reuben Cummings'
 
