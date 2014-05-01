@@ -12,9 +12,10 @@ An automated way to follow the Semantic Versioning Specification
 __title__ = 'bump'
 __package_name__ = 'bump'
 __author__ = 'Reuben Cummings'
-__description__ = 'An automated way to follow the Semantic Versioning Specification'
+__description__ = 'An automated way to follow the Semantic Versioning '
+__description__ += 'Specification'
 __email__ = 'reubano@gmail.com'
-__version__ = '1.0.0'
+__version__ = '1.1.0'
 __license__ = 'MIT'
 __copyright__ = 'Copyright 2014 Reuben Cummings'
 
@@ -35,15 +36,24 @@ class Project(object):
 	class representing a project object.
 	"""
 
-	def __init__(self, dir, **kwargs):
+	def __init__(self, dir, file=None):
 		"""
 		Parameters
 		----------
 		dir : str
 			the project directory
+
+		file : str
+			the file to search for a version
+
+		Examples
+		--------
+		>>> Project(os.curdir)  #doctest: +ELLIPSIS
+		<Bump.Project object at 0x...>
 		"""
 		self.current_tag = None
 		self.bumped = False
+		self.file = file
 		self.dir = dir
 
 	@property
@@ -57,16 +67,22 @@ class Project(object):
 	@property
 	def versioned_files(self):
 		# Get list of files with version metadata.
-		cmd = "git ls-tree --full-tree --name-only -r HEAD"
-		git_files = sh(cmd, True).splitlines()
 		versioned_files = []
-		file_names = [
-			'pearfarm.spec', 'setup.cfg', 'setup.py', '*/__init__.py',
-			'*.xml', 'package.json']
 
-		for git_file in git_files:
-			if any(fnmatch(git_file, file) for file in file_names):
-				versioned_files.append(git_file)
+		if (self.file):
+			print self.file
+			versioned_files.append(self.file)
+		else:
+			cmd = "git ls-tree --full-tree --name-only -r HEAD"
+			git_files = sh(cmd, True).splitlines()
+
+			file_names = [
+				'pearfarm.spec', 'setup.cfg', 'setup.py', '*/__init__.py',
+				'*.xml', 'package.json']
+
+			for git_file in git_files:
+				if any(fnmatch(git_file, file) for file in file_names):
+					versioned_files.append(git_file)
 
 		return versioned_files
 
@@ -74,11 +90,8 @@ class Project(object):
 	def version(self):
 		# Get the current release version from git.
 		if os.path.isdir(self.dir):
-			cmd = 'cd %s; git tag | grep v' % (self.dir)
-			versions = sh(cmd, True).splitlines()
-			versions = [v.lstrip('v').rstrip() for v in versions]
-			versions.sort(key=lambda s: map(int, s.split('.')))
-			return versions[-1]
+			cmd = 'cd %s; git describe --tags --abbrev=0' % (self.dir)
+			return sh(cmd, True).lstrip('v').rstrip()
 		else:
 			raise Exception('%s is not a directory' % (self.dir))
 
@@ -115,18 +128,19 @@ class Project(object):
 		files = sh("cd %s; git diff --minimal --numstat" % self.dir, True)
 		return [x.split("\t")[-1] for x in files.splitlines()]
 
-	def set_versions(self, new_version, pattern=None, i=0):
+	def set_versions(self, new_version, version, **kwargs):
+		i = kwargs.get('i', 0)
+		files = kwargs.get('files', self.versioned_files)
+
 		try:
-			file = self.versioned_files[i]
+			file = files[i]
 			i += 1
 		except IndexError:
 			return
 
-		if not self.version:
-			if pattern: # find lines in file containing pattern
-				cmd = 'cd %s; grep -ine "%s" %s' % (self.dir, pattern, file)
-			else: # get all lines in file
-				cmd = 'cd %s; grep -ine "" %s' % (self.dir, file)
+		if not version:
+			# get all lines in file
+			cmd = 'cd %s; grep -ine "" %s' % (self.dir, file)
 
 			try:
 				lines = sh(cmd, True)
@@ -152,20 +166,19 @@ class Project(object):
 				cmd = None
 		else:
 			# search for current version number and replace with new version
-			# number
 			cmd = ("cd %s; sed -i '' 's/%s/%s/g' %s"
-				% (self.dir, self.version, new_version, file))
+				% (self.dir, version, new_version, file))
 
 		sh(cmd) if cmd else None
 		self.bumped = self.is_dirty
-		return self.set_versions(new_version, pattern, i)
+		return self.set_versions(new_version, version, i=i, files=files)
 
 	def check_version(self, new_version):
 			cmd = ("echo %s | sed 's/[0-9]*\.[0-9]*\.[0-9]*/@/g'"
 				% new_version)
 			return sh(cmd, True).splitlines()[0] is '@'
 
-	def bump(self, bump_type):
+	def bump(self, bump_type, version):
 		"""
 		Parameters
 		----------
@@ -187,7 +200,7 @@ class Project(object):
 				'p': lambda: [version[0], version[1], version[2] + 1]}
 		except ValueError:
 			raise Exception(
-				'Invalid version: %i. Please use x.y.z format.' % self.version)
+				'Invalid version: %i. Please use x.y.z format.' % version)
 		else:
 			return '.'.join(map(str, switch.get(bump_type)()))
 

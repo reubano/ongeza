@@ -46,12 +46,17 @@ group.add_argument(
 parser.add_argument(
 	'-f', '--tag-format', action='store',
 	default='Version {version} Release',
-	help='git tag messgae format')
+	help='git tag message format')
 
 parser.add_argument(
 	'-F', '--commit-format', action='store',
 	default='Bump to version {version}',
 	help='git commit message format')
+
+parser.add_argument(
+	'-i', '--file', action='store',
+	default=None,
+	help='the versioned file')
 
 parser.add_argument(
 	dest='dir', nargs='?', default=os.curdir, type=str,
@@ -62,26 +67,26 @@ args = parser.parse_args()
 
 def main():
 	try:
-		project = Project(args.dir)
+		project = Project(args.dir, args.file)
 		git = Git(args.dir)
+		cur_version = project.version
 
-		if (not project.version and args.bump_type):
+		if (not cur_version and args.bump_type):
 			raise Exception(
 				"No git tags found, please run with '-s and -T' options")
-		elif (project.version and not args.bump_type and not args.version):
-			msg = 'Current version: %s' % project.version
+		elif (cur_version and not args.bump_type and not args.version):
+			msg = 'Current version: %s' % cur_version
 		elif project.is_dirty:
 			raise Exception(
 				"Can't bump the version with a dirty git index. Please commit "
 				"your changes or stash the following files and try again:\n%s" %
 				"\n".join(project.dirty_files))
-		elif (project.version and args.bump_type):
-			new_version = project.bump(args.bump_type)
-			project.set_versions(new_version)
+		elif (cur_version and args.bump_type):
+			new_version = project.bump(args.bump_type, cur_version)
+			project.set_versions(new_version, cur_version)
 
 			if project.bumped:
-				msg = 'Bumped from version %s to %s' % (
-					project.version, new_version)
+				msg = 'Bumped from version %s to %s' % (cur_version, new_version)
 			else:
 				raise Exception("Couldn't find a version to bump.")
 		elif args.version:  # set the version
@@ -99,11 +104,11 @@ def main():
 			git.add(project.versioned_files)
 			git.commit(message)
 
-		tag = (project.bumped and args.tag and project.version)
-		tag = (tag or (args.version and args.tag and not project.version))
+		tag = (project.bumped and args.tag and cur_version)
+		tag = (tag or (args.version and args.tag and not cur_version))
 
 		if tag:
-			version = (project.version or args.version)
+			version = (cur_version or args.version)
 			message = args.tag_format.format(version=version)
 			git.tag(message, version)
 		elif args.tag:
