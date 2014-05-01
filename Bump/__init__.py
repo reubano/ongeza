@@ -162,7 +162,6 @@ class Project(object):
 			# search for current version number and replace with new version
 			cmd = ("cd %s; sed -i '' 's/%s/%s/g' %s"
 				% (self.dir, version, new_version, file))
-			print cmd
 
 		sh(cmd) if cmd else None
 		self.bumped = self.is_dirty

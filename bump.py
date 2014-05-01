@@ -46,7 +46,7 @@ group.add_argument(
 parser.add_argument(
 	'-f', '--tag-format', action='store',
 	default='Version {version} Release',
-	help='git tag messgae format')
+	help='git tag message format')
 
 parser.add_argument(
 	'-F', '--commit-format', action='store',
