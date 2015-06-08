@@ -29,6 +29,7 @@ setup(
   url="http://github.com/gregorynicholas/keybump",
   license="MIT",
   author="gregorynicholas",
+  author_email="gn@gregorynicholas.com",
   description="helper script to perform a project release, and follow the "
   "semantic versioning specification.",
   long_description=__doc__,
