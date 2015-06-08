@@ -6,38 +6,27 @@
   an opinionated script for managing version releases in a github project
   and following the semantic versioning specification.
 
-  :copyright: (c) 2013 by gregorynicholas.
+  :copyright: (c) 2015 by gregorynicholas.
   :license: MIT, see LICENSE for more details.
 """
 import re
-import os
 import sys
 import yaml
+from os import getcwd
+from os import path
 from sys import exit
-from optparse import OptionParser
 from datetime import datetime
-from subprocess import Popen
-from subprocess import PIPE, STDOUT
+from optparse import OptionParser
+from keybump_formatter import *
+from keybump_git_utils import *
+from keybump_shell_utils import *
+from keybump_package_utils import *
 
-__all__ = [
-  "main", "ensure_clean_index",
-  "Project", "Release", "Changelog", "SummaryFormatter",
-]
 
-github_issue_reference_keywords = [
-  "close",
-  "closes",
-  "closed",
-  "fix",
-  "fixes",
-  "fixed",
-  "resolve",
-  "resolves",
-  "resolved",
-]
-
-DEFAULT_CONFIG_FILE = ".keybump"
+DEFAULT_CONFIG_FILE = ".keybump.yaml"
 DEFAULT_SKIP_INTERACTIVE = False
+DEFAULT_SKIP_SET_INIT_PY_VERSION = False
+DEFAULT_SKIP_SET_SETUP_PY_VERSION = False
 DEFAULT_SKIP_TAG = False
 DEFAULT_SKIP_PUSH = False
 DEFAULT_SKIP_COMMIT = False
@@ -73,18 +62,9 @@ INFO_FMT = """project version information:
   current tag:  {}
   version id:   {}"""
 
-version_reg = re.compile("^Version\s+(.*)")
-release_header_reg = re.compile(
+version_re = re.compile("^Version\s+(.*)")
+release_header_re = re.compile(
   "Released on (\d+-\d+-\d+)(?:, codename (.*))?(?i)")
-
-
-class BaseSummaryFormatter(object):
-  """
-  base class for a commit summary formatter.
-  """
-
-  def __init__(self, format):
-    self.format = format
 
 
 class SummaryFormatter(BaseSummaryFormatter):
@@ -106,6 +86,8 @@ class KeybumpConfig(dict):
     rv = cls(
       bump_type=options.bump_type,
       skip_interactive=options.skip_interactive,
+      skip_set_init_py_version=options.skip_set_init_py_version,
+      skip_set_setup_py_version=options.skip_set_setup_py_version,
       skip_tag=options.skip_tag,
       skip_push=options.skip_push,
       skip_commit=options.skip_commit,
@@ -134,7 +116,7 @@ class KeybumpConfig(dict):
     dict.__init__(self, *args)
     self.update(*args, **kw)
 
-  def update(self, values, **kw):
+  def update(self, *values, **kw):
     if values:
       for k, v in values.iteritems():
         setattr(self, k, v)
@@ -149,17 +131,17 @@ class KeybumpConfig(dict):
 
   def _find(self, config_file):
     if config_file:
-      if os.path.exists(config_file):
+      if path.exists(config_file):
         return config_file
     else:
       # find a default configuration file either in the home dir or current
       # working dir..
-      config_file = os.path.expanduser("~/{}".format(DEFAULT_CONFIG_FILE))
-      if os.path.exists(config_file):
+      config_file = path.expanduser("~/{}".format(DEFAULT_CONFIG_FILE))
+      if path.exists(config_file):
         return config_file
       else:
-        config_file = os.path.join(os.getcwd(), DEFAULT_CONFIG_FILE)
-        if os.path.exists(config_file):
+        config_file = path.join(getcwd(), DEFAULT_CONFIG_FILE)
+        if path.exists(config_file):
           return config_file
 
 
@@ -202,13 +184,9 @@ class Project(object):
   def release_count(self):
     return len(self.releases)
 
-  @property
-  def last_tag(self):
-    return self.tags[-1]
-
   def parse_git_tags(self):
     """
-    sets the git tags and current repo index git tag.
+    loads the repo's git tags, sets the `current_tag` + `latest_tag` attrs.
     """
     self.tags = get_git_tags()
     # what to do on first time run? no tags yet..
@@ -217,24 +195,30 @@ class Project(object):
   still ghetto-riggin this script along.. workin on it..""")
       # todo: implement condition for new project without tags / version.
       # https://github.com/gregorynicholas/keybump/issues/2
+    self.latest_tag = get_latest_git_tag()
+    # print 'get_latest_git_tag:', get_latest_git_tag()
     self.current_tag = self._current_or_last_git_tag()
 
   def _current_or_last_git_tag(self):
     """
-      :returns: string name of the current or last git tag.
+    returns string name of the current or last git tag.
     """
     rv = get_current_git_tag()
     if rv not in self.tags:
-      # describe makes up it's own tag names, so make sure we have a real tag
-      # to build from, else we're fucked.
-      rv = self.last_tag
+      rv = self.latest_tag
     return rv
 
   def parse_versions(self):
     if not self.current_tag or len(self.current_tag) < 1:
       return
     non_decimal = re.compile(r"[^\d.]+")
-    self.last_version_num = non_decimal.sub("", self.current_tag)
+    try:
+      self.last_version_num = non_decimal.sub("", self.current_tag)
+    except TypeError, e:
+      print 'TypeError:', e, self.current_tag
+      raise e
+    except Exception, e:
+      raise e
 
   def parse_releases(self):
     """
@@ -260,7 +244,7 @@ class Project(object):
         hasdata = True
 
         # parse the last version..
-        ver_match = version_reg.search(line.strip())
+        ver_match = version_re.search(line.strip())
         if ver_match is None:
           continue
         version_num = ver_match.group(1).strip()
@@ -273,7 +257,7 @@ class Project(object):
           release_header = lineiter.next().strip()
           if release_header:
             break
-        rel_match = release_header_reg.search(release_header)
+        rel_match = release_header_re.search(release_header)
         if rel_match is None:
           # todo: raise exception here?
           continue
@@ -303,8 +287,9 @@ class Project(object):
       if len(result) == 0 and hasdata:
         fail("""unable to parse the changelog contents.
 
-  format not recognized by parser.""")
+        format not recognized by parser.""")
       return result
+
 
   def setup_initial_release(self):
     """
@@ -328,6 +313,9 @@ class Project(object):
     self.releases.append(rel)
 
   def create_initial_release(self, version_num):
+    """
+    creates a default initial release of 0.0.0
+    """
     rel = Release(
       self, version_num, datestr=today_str(),
       summaries=[self.initial_version_summary_item])
@@ -346,15 +334,20 @@ class Project(object):
       self.get_changelog_summaries_since(self.current_tag))
     return rv
 
-  def get_changelog_summaries_since(self, last_tag):
+  def get_changelog_summaries_since(self, latest_tag):
     """
-      :param last_tag:
-      :returns: string list of git commit messages between the `last_tag`
+      :param latest_tag:
+      :returns: string list of git commit messages between the `latest_tag`
         and the latest commit
     """
     sep = "__||__"
-    rv = sh("git log --no-merges --pretty=%B{} {}..", sep, last_tag)
+    rv = sh("git log --no-merges --pretty=%B{} {}..", sep, latest_tag)
     return [x.strip() for x in rv.split(sep)]
+
+
+  def __str__(self):
+    return INFO_FMT.format(
+      self.latest_tag, self.current_tag, self.last_version_num)
 
 
 class Changelog(object):
@@ -362,8 +355,8 @@ class Changelog(object):
   class representing a changelog object.
   """
 
-  def __init__(self, path, formatter=None, parser=None):
-    self.path = path
+  def __init__(self, filepath, formatter=None, parser=None):
+    self.path = filepath
     self.formatter = formatter
     self.parser = parser
 
@@ -492,6 +485,15 @@ class Release(object):
     """
     self.version_num = self._bump_num(self.version_num, bump_type)
 
+  def __str__(self):
+    return """"
+  previous release: {} (codename: {}, date: {})
+  creating release: {} (codename: {}, date: {})
+  """.format(
+     self.project.last_release.version_num, self.project.codename,
+     self.project.last_release.date,
+     self.version_num, self.codename, self.date)
+
 
 # util helpers..
 
@@ -500,256 +502,98 @@ def formatjoin(format, items):
   return format + ("\n" + format).join(items)
 
 
-def write(path, data):
-  with open(path, "w") as f:
-    if isinstance(data, basestring):
-      f.write(data)
-    else:
-      f.writelines(data)
-
-
 def today_str():
   return datetime.now().strftime(DEFAULT_DATESTR_FMT)
 
 
-# git helpers..
-# todo: move these to separate namespace..
+# entry point..
 
 
-def get_current_git_tag():
-  """
-    :returns: string of the current git tag on the git index, not the latest
-              tag version created.
-  """
-  return sh("git describe").strip()
+def main(options, args):
+  config = KeybumpConfig.from_cli_options(options)
+  project = Project(config)
+  project.parse_git_tags()
+  project.parse_versions()
+  project.parse_releases()
+
+  if not config.bump_type:
+    info(project)
+    exit(0)
+
+  ensure_clean_index(config.skip_interactive)
+
+  # increment the version..
+  new_release = project.new_release()
+
+  # print the diff
+  info(new_release)
+
+  # todo: add optional step to add a separate [version]-dev..
+  # https://github.com/gregorynicholas/keybump/issues/3
+  # setup the dev new version..
+  # dev_version = new_version + '-dev'
+
+  changelog_summary = new_release.format_changelog_summary()
+
+  # todo: add inline changelog summary editing..
+  # https://github.com/gregorynicholas/keybump/issues/4
+  # present string to user to customize before continuing..
+  # if not config.skip_interactive:
+  #   readline.set_startup_hook(
+  #     lambda: readline.insert_text(changelog_summary))
+  #   changelog_summary = input(BANNER)
+
+  # add the release changelog summary to the changelog file..
+  project.changelog.prepend(changelog_summary)
+
+  if not config.skip_interactive:
+    # todo: add ANSI/colorama and remove excess chars..
+    if not choice("""
+  ========================================================
+  review + edit changelog summary file: {}.
+
+  when satisfied, save the uncommitted file and enter a response below to
+  continue or not.
 
 
-def get_git_tags():
-  """
-    :returns: list of git tags, sorted by the date of the commit it points to.
-  """
-  return sh("git for-each-ref --format='%(tag)' refs/tags").splitlines()
+  continue with the release bump?""".format(project.changelog_file)):
+      fail("keybump exiting..")
+      # todo: rollback flow here?
+      # checkout changed files..?
 
+  # todo: rollback flow here?
 
-def git_is_clean():
-  """
-    :returns: boolean if there is a dirty index.
-  """
-  return str(sh("git diff --quiet")) == "0"
+  # optional step to set python __init__.py version..
+  if not config.skip_set_init_py_version:
+    set_init_py_version(new_version)
 
+  # optional step to set python setup.py version..
+  if not config.skip_set_setup_py_version:
+    set_setup_py_version(new_version)
 
-def git_diff_files():
-  """
-    :returns: list of string names of the files that are dirty.
-  """
-  files = sh("git diff --minimal --numstat")
-  return [x.split("\t")[-1] for x in files.splitlines()]
+  if not config.skip_commit:
+    make_git_commit(config.changelog_file, new_release.tag_msg)
 
+  if not config.skip_tag:
+    make_git_tag(new_release.tag_msg, new_release.version_num)
 
-def git_checkout(id):
-  """
-    :param id: string identifier of the commit'ish to checkout.
-  """
-  info('checking out: "{}"', id)
-  sh("git checkout {}", id)
+  if not config.skip_push:
+    push_to_remote()
 
-
-def git_stash():
-  """
-  stashes current changes in git.
-  """
-  sh("git stash")
-  return True
-
-
-def make_git_commit(changelog_file, message):
-  """
-    :param message: string message for the commit.
-  """
-  info('making git commit: "{}"', message)
-  sh("git add {} && git commit -am {}", changelog_file, message)
-
-
-def make_git_tag(msg, tag_name):
-  """
-    :param tag_name: string name for the tag.
-  """
-  info('making git tag: "{}"', tag_name)
-  sh("git tag {} -m {}", tag_name, msg)
-
-
-def push_to_remote():
-  """
-  pushes current branch and tags to remote.
-  """
-  # don't call --all here on purpose..
-  sh("git push && git push --tags")
-
-
-def ensure_clean_index(skip_interactive=False, callback=None):
-  """
-  ensures the current git staging index has no uncommitted or stashed changes.
-
-    :param skip_interactive: boolean flag to skip getting input from a cli.
-    :param callback: recursive callback function.
-  """
-  if git_is_clean():
-    return True
-  if callback is None:
-    callback = ensure_clean_index
-  files = git_diff_files()
-  msg = """
-  cannot bump the version with a dirty git index.
-  fix uncommitted files by stashing, committing,
-  or resetting the following files:
-
-  {}
-  """.format("\n  ".join(files))
-  if skip_interactive:
-    fail(msg)
-  # clean the index..
-  info(msg)
-  if not choice("want keybump to snort ..achem stash.. your changes?"):
-    fail("not continuing due to dirty index, fix that shit..")
   info("""
-  ok, you asked for it..
-  """)
-  git_stash()
-  if callback:
-    return callback(skip_interactive, callback)
+  ========================================================
+  release complete: {}.
+  """.format(new_release.tag_msg))
 
+  # optional pypi releases..
 
-# python package..
+  if not config.pypi_distribute:
+    setup_distribute()
+    info("version built + released and uploaded to python package index..")
 
-def set_version_in_file(filename, version_number, pattern):
-  """
-    :param filename:
-    :param version_number:
-    :param pattern:
-  """
-  changed = []
-
-  def inject_version(match):
-    before, old, after = match.groups()
-    changed.append(True)
-    return before + version_number + after
-
-  with open(filename, "r") as f:
-    data_str = re.sub(
-      r"^(\s*%s\s*=\s*')(.+?)(')(?sm)" % pattern, inject_version, f.read())
-  if len(changed) < 1:
-    fail(
-      "could not set init file version. pattern {} not found in {}",
-      pattern, filename)
-  write(filename, data_str)
-
-
-def set_init_py_version(version):
-  """
-    :param version:
-  """
-  info("setting __init__.py version to: {}", version)
-  set_version_in_file("__init__.py", version, "__version__")
-
-
-def set_setup_py_version(version):
-  """
-    :param version:
-  """
-  info("setting setup.py version to {}", version)
-  set_version_in_file("setup.py", version, "version")
-
-
-def setup_py_distribute():
-  sh("{} setup.py clean sdist upload", sys.executable)
-
-
-# cli interface..
-
-
-def sh(command, error=None, cwd=None, *args, **kw):
-  """
-  runs an external command.
-
-  if the command has a non-zero return code raise a buildfailure. you can pass
-  `error=True` to allow non-zero return codes to be allowed to pass silently,
-  silently into the night. passing `cwd="some/path"` will chdir to
-  "some/path" before exectuting the command.
-
-    :returns: string of the captured output of the command.
-  """
-  if error is None:
-    error = False
-
-  if len(args) > 0:
-    command = command.format(*args)
-
-  if len(kw) > 0:
-    command = command.format(**kw)
-
-  def runpipe():
-    p = Popen(
-      command,
-      cwd=cwd,
-      shell=True,
-      stderr=STDOUT,
-      stdout=PIPE)
-    p_stdout = p.communicate()[0]
-    if p_stdout is not None:
-      p_stdout = p_stdout.decode(sys.getdefaultencoding())
-    if p.returncode and not error:
-      if p_stdout is not None:
-        fail(p_stdout)
-      fail("command error: `{}`. return code: {}", command, p.returncode)
-    return p_stdout
-  return runpipe()
-
-
-def choice(msg):
-  """
-  prompts for a True/False input from the user command line.
-
-    :returns: boolean for the True/False user response.
-  """
-  return input("{}  [Yn]: ".format(msg)).upper() == "Y"
-
-
-def input(*args, **kw):
-  """
-  method to proxy `raw_input` so it can be mocked during tests.
-  """
-  return raw_input(*args, **kw)
-
-
-def stderr():
-  """
-  method to proxy stderr so it can be mocked during tests.
-  """
-  return sys.stderr
-
-
-def stdout():
-  """
-  method to proxy stdout so it can be mocked during tests.
-  """
-  return sys.stdout
-
-
-def fail(message, *args):
-  print >> stderr(), "error:", message.format(*args)
-  exit(1)
-
-
-def info(message, *args):
-  print >> stdout(), message.format(*args)
-
-
-def print_project_info(current_tag, last_tag, version_num):
-  """
-  prints project version information and exits without error.
-  """
-  info(INFO_FMT, last_tag, current_tag, version_num)
+  project.releases.append(new_release)
   exit(0)
+
 
 parser = OptionParser(
   description="description: keybump makes following the semantic versioning "
@@ -776,6 +620,16 @@ parser.add_option(
     major [x].x.x
     minor x.[x].x
     patch x.x.[x]""")
+
+parser.add_option(
+  "--skip-set-init-py", dest="skip_set_init_py_version", action="store_true",
+  default=DEFAULT_SKIP_SET_INIT_PY_VERSION,
+  help="skips setting the new version string in the project root's __init__.py")
+
+parser.add_option(
+  "--skip-set-setup-py", dest="skip_set_setup_py_version", action="store_true",
+  default=DEFAULT_SKIP_SET_SETUP_PY_VERSION,
+  help="skips setting the new version string in the setup.py")
 
 parser.add_option(
   "--skip-commit", dest="skip_commit", action="store_true",
@@ -819,89 +673,6 @@ parser.add_option(
 parser.add_option(
   "--git-tag-fmt", dest="tag_msg_fmt", default=DEFAULT_TAG_MSG_FMT,
   help="string format of the git tag")
-
-
-def main(options, args):
-  config = KeybumpConfig.from_cli_options(options)
-  project = Project(config)
-  project.parse_git_tags()
-  project.parse_versions()
-  project.parse_releases()
-
-  if not config.bump_type:
-    print_project_info(
-      project.current_tag,
-      project.last_tag,
-      project.last_version_num)
-
-  ensure_clean_index(config.skip_interactive)
-  # increment the version..
-  new_release = project.new_release()
-  info(""""
-  previous release: {} (codename: {}, date: {})
-  creating release: {} (codename: {}, date: {})
-  """,
-       project.last_release.version_num, project.codename,
-       project.last_release.date,
-       new_release.version_num, new_release.codename, new_release.date)
-
-  # todo: add optional step to add a separate [version]-dev..
-  # https://github.com/gregorynicholas/keybump/issues/3
-  # setup the dev new version..
-  # dev_version = new_version + '-dev'
-
-  changelog_summary = new_release.format_changelog_summary()
-
-  # todo: add inline changelog summary editing..
-  # https://github.com/gregorynicholas/keybump/issues/4
-  # present string to user to customize before continuing..
-  # if not config.skip_interactive:
-  #   readline.set_startup_hook(
-  #     lambda: readline.insert_text(changelog_summary))
-  #   changelog_summary = input(BANNER)
-
-  # add the release changelog summary to the changelog file..
-  project.changelog.prepend(changelog_summary)
-
-  if not config.skip_interactive:
-    if not choice("""
-  ========================================================
-  review + edit changelog summary file: {}. when you are
-  satisfied, save the uncommitted file and enter a response
-  below to continue or not.
-
-  continue with the release bump?""".format(project.changelog_file)):
-      fail("keybump exiting..")
-      # todo: create rollback flow?
-
-  # todo: add as optional step to set python __init__.py version..
-  # set_init_version(new_version)
-
-  # todo: add as optional step to set python setup.py version..
-  # set_setup_version(new_version)
-
-  if not config.skip_commit:
-    make_git_commit(config.changelog_file, new_release.tag_msg)
-
-  if not config.skip_tag:
-    make_git_tag(new_release.tag_msg, new_release.version_num)
-
-  if not config.skip_push:
-    push_to_remote()
-
-  info("""
-  ========================================================
-  release complete: {}.
-  """.format(new_release.tag_msg))
-
-  # optional pypi releases..
-
-  if not config.pypi_distribute:
-    setup_py_distribute()
-    info("version built + released and uploaded to python package index..")
-
-  project.releases.append(new_release)
-  exit(0)
 
 
 if __name__ == "__main__":

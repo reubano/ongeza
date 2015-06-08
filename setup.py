@@ -3,8 +3,13 @@
   keybump
   ~~~~~~~
 
-  helper script to perform a project release, and follow the semantic
-  versioning specification.
+  keybump is an opinionated command-line tool to manage versioning, dist, releasing
+  package builds.
+
+  keybump makes following the semantic versioning specification (http://semver.org) a breeze.
+
+  keybump helps to automate the tedious task of summarizing changes from one version to the next by intelligently parsing the commit messages.
+
 
   links
   -----
@@ -16,13 +21,11 @@
 """
 from setuptools import setup
 
-# grab requirments.
-with open("requirements.txt") as f:
-  required = f.readlines()
+__version__ = "3.0.1"
 
 setup(
   name="keybump",
-  version="3.0.1",
+  version=__version__,
   url="http://github.com/gregorynicholas/keybump",
   license="MIT",
   author="gregorynicholas",
@@ -30,9 +33,18 @@ setup(
   "semantic versioning specification.",
   long_description=__doc__,
   scripts=["keybump"],
+  py_modules=[
+    "keybump_config",
+    "keybump_formatter",
+    "keybump_git_utils",
+    "keybump_package_utils",
+    "keybump_shell_utils",
+  ],
   zip_safe=False,
   platforms="any",
-  install_requires=required,
+  install_requires=[
+    "pyyaml==3.10",
+  ],
   tests_require=[
     "nose==1.2.1",
     "mock==1.0.1",

@@ -1,8 +1,8 @@
 keybump
 =======
 
-* keybump is an opinionated script for managing version releases in a github project.
-* keybump makes following the [semantic versioning specification](http://semver.org/) a breeze.
+* keybump is an opinionated command-line tool to manage versioning, dist, releasing package builds.
+* keybump makes following the [semantic versioning specification](http://semver.org) a breeze.
 * keybump helps to automate the tedious task of summarizing changes from one version to the next by intelligently parsing the commit messages.
 
 -----
@@ -110,7 +110,7 @@ lists can be turned into Task Lists by prefacing list items with:
 * `[ ]  complete`
 * `[x]  incomplete`
 
-#### issues
+#### github issues
 
 you can use any of the following keywords to close an issue via commit message:
 
