@@ -1,5 +1,5 @@
 """
-  keybump_git_utils
+  keybump.git_utils
   ~~~~~~~~~~~~~~~~~
 
   helpers for working with git.
@@ -7,12 +7,14 @@
   :copyright: (c) 2015 by gregorynicholas.
   :license: MIT, see LICENSE for more details.
 """
-from keybump_shell_utils import *
+from __future__ import unicode_literals
+from keybump.shell_utils import *
 
 
 __all__ = ['get_current_git_tag', 'get_git_tags', 'get_latest_git_tag',
 'git_is_clean', 'git_diff_files', 'git_checkout', 'git_stash', 'make_git_commit',
-'make_git_tag', 'push_to_remote', 'ensure_clean_index']
+'make_git_tag', 'push_to_remote', 'ensure_clean_index', 'has_unstaged_changes',
+'get_unstaged_files', 'has_uncommitted_changes', 'get_uncommitted_files']
 
 
 GITHUB_ISSUE_REFERENCE_KEYWORDS = [
@@ -56,9 +58,30 @@ def get_latest_git_tag():
 
 def git_is_clean():
   """
-    :returns: boolean if there is a dirty index.
+  returns boolean true/false if there is a dirty index.
   """
-  return str(sh("git diff --quiet")) == "0"
+  if has_unstaged_changes() or has_uncommitted_changes():
+    return False
+  else:
+    return True
+  # return str(sh("git diff --quiet")) == "0"
+
+
+
+def has_unstaged_changes():
+  return len(sh("git diff-files --ignore-submodules").strip()) > 0
+
+def get_unstaged_files():
+  return sh("git diff-files --name-status -r --ignore-submodules")
+
+
+
+def has_uncommitted_changes():
+  return len(sh("git diff-index --cached HEAD --ignore-submodules").strip()) > 0
+
+def get_uncommitted_files():
+  return sh("git diff-index --cached --name-status -r --ignore-submodules HEAD")
+
 
 
 def git_diff_files():
@@ -82,7 +105,6 @@ def git_stash():
   stashes current changes in git.
   """
   sh("git stash")
-  return True
 
 
 def get_first_commit():
@@ -167,24 +189,28 @@ def ensure_clean_index(skip_interactive=False, callback=None):
     :param skip_interactive: boolean flag to skip getting input from a cli.
     :param callback: recursive callback function.
   """
-  if git_is_clean():
+  if not has_unstaged_changes() and not has_uncommitted_changes():
+    if callback:
+      return callback(skip_interactive, callback)
     return True
+
   if callback is None:
     callback = ensure_clean_index
+
   files = git_diff_files()
   msg = """
-  cannot bump the version with a dirty git index.
-  fix uncommitted files by stashing, committing,
-  or resetting the following files:
+  aborting.. un[stashed/committed] changes. fix uncommitted files by
+  stashing, committing, or resetting the following files:
 
   {}
   """.format("\n  ".join(files))
   if skip_interactive:
     fail(msg)
+
   # clean the index..
   info(msg)
   if not choice("want keybump to snort ..achem stash.. your changes?"):
-    fail("not continuing due to dirty index, fix that shit..")
+    fail("aborting.. un[stashed/committed] changes..")
 
   info("""
   ok, you asked for it..

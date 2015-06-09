@@ -1,16 +1,29 @@
 keybump
 =======
 
-* keybump is an opinionated command-line tool to manage versioning, dist, releasing package builds.
+manage your versioning like a boss .
+
+* keybump is an opinionated command-line app to manage versioning workflow + dist + releasing.
 * keybump makes following the [semantic versioning specification](http://semver.org) a breeze.
 * keybump helps to automate the tedious task of summarizing changes from one version to the next by intelligently parsing the commit messages.
+
+
+[![Build Status](https://secure.travis-ci.org/gregorynicholas/keybump.png?branch=develop)](https://travis-ci.org/gregorynicholas/keybump)
+
+
+links:
+* [source](http://github.com/gregorynicholas/keybump)
+* [github docs](http://gregorynicholas.github.io/keybump)
+* [python package](http://packages.python.org/keybump)
+* [travis-ci](http://travis-ci.org/gregorynicholas/keybump)
+* [semantic versioning specification](http://semver.org)
+
 
 -----
 
 
 ### introduction
 
-[![Build Status](https://secure.travis-ci.org/gregorynicholas/keybump.png?branch=develop)](https://travis-ci.org/gregorynicholas/keybump)
 
 development + testing done on the following configuration:
 
