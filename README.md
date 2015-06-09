@@ -8,7 +8,7 @@ manage your versioning like a boss .
 * keybump helps to automate the tedious task of summarizing changes from one version to the next by intelligently parsing the commit messages.
 
 
-[![Build Status](https://secure.travis-ci.org/gregorynicholas/keybump.png?branch=develop)](https://travis-ci.org/gregorynicholas/keybump)
+[![Build Status](https://secure.travis-ci.org/gregorynicholas/keybump.svg?branch=develop)](https://travis-ci.org/gregorynicholas/keybump)
 
 
 links:
