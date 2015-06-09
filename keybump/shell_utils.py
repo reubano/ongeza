@@ -1,5 +1,5 @@
 """
-  keybump_shell_utils
+  keybump.shell_utils
   ~~~~~~~~~~~~~~~~~~~
 
   helpers for the shell.
@@ -7,13 +7,21 @@
   :copyright: (c) 2015 by gregorynicholas.
   :license: MIT, see LICENSE for more details.
 """
+from __future__ import unicode_literals
 import sys
+from logging import getLogger, DEBUG
 from sys import exit
 from subprocess import Popen
 from subprocess import PIPE, STDOUT
 
 
-__all__ = ['sh', 'stderr', 'stdout', 'fail', 'info', 'input', 'choice', 'write']
+__all__ = [
+  'sh', 'stderr', 'stdout', 'fail', 'info', 'input', 'choice', 'write',
+]
+
+
+logger = getLogger(__name__)
+logger.setLevel(DEBUG)
 
 
 def sh(command, error=None, cwd=None, *args, **kw):
@@ -46,24 +54,23 @@ def sh(command, error=None, cwd=None, *args, **kw):
 
   def run():
     p = Popen(command, **kwargs)
-    p_stdout = p.communicate()[0]
+    _stdout, _stderr  = p.communicate()
 
-    if p_stdout is not None:
-      p_stdout = p_stdout.decode(sys.getdefaultencoding())
+    if _stdout is not None:
+      _stdout = _stdout.decode(sys.getdefaultencoding())
 
-    if p.returncode and not error:
-      if p_stdout is not None:
+    if _stderr is not None:
+      _stderr = _stderr.decode(sys.getdefaultencoding())
+
+    if p.returncode:
+      if error:
         fail('''
-          sh error: {}
-          return-code: {}
+          command: '{}'
           stdout: {}
-        ''', command, p.returncode)
-      else:
-        fail('''
-          sh error: {}
-          return-code: {}
-        ''', command, p.returncode)
-    return p_stdout
+          stderr: {}
+        ''', command, _stdout, _stderr)
+
+    return _stdout
 
   return run()
 
@@ -83,12 +90,17 @@ def stdout():
 
 
 def fail(message, *args):
-  print >> stderr(), "error:", message.format(*args)
+  logger.error('failure: {}'.format(message))
+  if len(args) > 0:
+    message = message.format(*args)
+  print >> stderr(), "error:", message
   exit(1)
 
 
 def info(message, *args):
-  print >> stdout(), str(message).format(*args)
+  if len(args) > 0:
+    message = str(message).format(*args)
+  print >> stdout(), message
 
 
 def choice(msg):
@@ -108,6 +120,9 @@ def input(*args, **kw):
 
 
 def write(path, data):
+  """
+  write a file.
+  """
   with open(path, "w") as f:
     if isinstance(data, basestring):
       f.write(data)

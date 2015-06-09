@@ -1,5 +1,5 @@
 """
-  keybump_package_utils
+  keybump.package_utils
   ~~~~~~~~~~~~~~~~~~~~~
 
   helpers for working with the python package index.
@@ -7,11 +7,12 @@
   :copyright: (c) 2015 by gregorynicholas.
   :license: MIT, see LICENSE for more details.
 """
-from keybump_shell_utils import *
+from __future__ import unicode_literals
+from keybump.shell_utils import *
 
 
 __all__ = ['set_version_in_file', 'set_init_py_version', 'set_setup_py_version',
-'setup_distribute']
+'setup_py_distribute']
 
 
 def set_version_in_file(filename, version_number, pattern):
@@ -53,7 +54,7 @@ def set_setup_py_version(version):
   set_version_in_file("setup.py", version, "version")
 
 
-def setup_distribute():
+def setup_py_distribute():
   """
   uploads a dist build to the python package index.
   """

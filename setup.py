@@ -3,20 +3,21 @@
   keybump
   ~~~~~~~
 
-  keybump is an opinionated command-line tool to manage versioning, dist, releasing
-  package builds.
+  manage your versioning like a boss .
 
-  keybump makes following the semantic versioning specification (http://semver.org) a breeze.
-
-  keybump helps to automate the tedious task of summarizing changes from one version to the next by intelligently parsing the commit messages.
+  - keybump is an opinionated command-line app to manage versioning workflow + dist + releasing.
+  - keybump makes following the semantic versioning specification (http://semver.org) a breeze.
+  - keybump helps to automate the tedious task of summarizing changes from one version to the next by intelligently parsing the commit messages.
 
 
   links
   -----
 
-* [github docs](http://gregorynicholas.github.com/keybump)
-* [docs](http://packages.python.org/keybump)
+* [source](http://github.com/gregorynicholas/keybump)
+* [github docs](http://gregorynicholas.github.io/keybump)
+* [python package](http://packages.python.org/keybump)
 * [semantic versioning specification](http://semver.org)
+* [travis-ci](http://travis-ci.org/gregorynicholas/keybump)
 
 """
 from setuptools import setup
@@ -30,28 +31,25 @@ setup(
   license="MIT",
   author="gregorynicholas",
   author_email="gn@gregorynicholas.com",
-  description="helper script to perform a project release, and follow the "
-  "semantic versioning specification.",
+  description="manage your versioning like a boss .",
   long_description=__doc__,
-  scripts=["keybump"],
+  scripts=["bin/keybump"],
   py_modules=[
-    "keybump_config",
-    "keybump_formatter",
-    "keybump_git_utils",
-    "keybump_package_utils",
-    "keybump_shell_utils",
+  ],
+  packages=[
+    'keybump',
   ],
   zip_safe=False,
   platforms="any",
   install_requires=[
     "pyyaml==3.10",
   ],
+  test_suite="tests",
   tests_require=[
     "nose==1.2.1",
     "mock==1.0.1",
   ],
   dependency_links=[],
-  test_suite="keybump_tests",
   classifiers=[
     'Environment :: Web Environment',
     'Intended Audience :: Developers',
