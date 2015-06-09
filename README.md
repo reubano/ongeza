@@ -12,8 +12,7 @@ keybump
 
 [![Build Status](https://secure.travis-ci.org/gregorynicholas/keybump.png?branch=develop)](https://travis-ci.org/gregorynicholas/keybump)
 
-if called with no options, keybump will print the script's current
-git tag version. it has been tested on the following configuration:
+development + testing done on the following configuration:
 
 * macosx *10.7.6*
 * python *2.7.4*
@@ -29,16 +28,11 @@ keybump requires the following in order to run properly:
 * [python >= *2.5*](http://python.org)
 * [git >= *1.8*](http://git-scm.org)
 
-
------
-
-
-### preparation
-
 check that the correct version of git + python are installed
 
     $ python --version
     $ git --version
+
 
 -----
 
@@ -70,6 +64,10 @@ options:
     --git-tag-fmt           string format of the git tag
 
 
+if called with no options, keybump will print the script's current git tag
+version.
+
+
 #### examples
 
 normal usage
@@ -87,6 +85,7 @@ project's information:
 
 ### github-flavored-markdown notes
 
+
 #### mentions
 
 use a /cc convention to call out people:
@@ -103,6 +102,7 @@ certain [references are auto-linked](https://help.github.com/articles/github-fla
 * `User/#Num`        : mojombo#1
 * `User/Project#Num` : mojombo/github-flavored-markdown#1
 
+
 #### task lists
 
 lists can be turned into Task Lists by prefacing list items with:
@@ -110,7 +110,8 @@ lists can be turned into Task Lists by prefacing list items with:
 * `[ ]  complete`
 * `[x]  incomplete`
 
-#### github issues
+
+#### referencing github issues
 
 you can use any of the following keywords to close an issue via commit message:
 
