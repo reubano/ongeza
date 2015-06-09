@@ -1,0 +1,210 @@
+#!/usr/bin/env python
+"""
+  keybump
+  ~~~~~~~
+
+  manage your versioning like a boss .
+
+  :copyright: (c) 2015 by gregorynicholas.
+  :license: MIT, see LICENSE for more details.
+"""
+from __future__ import unicode_literals
+import sys
+from os import getcwd
+from os import path
+from sys import exit
+from optparse import OptionParser
+from keybump.config import KeybumpConfig
+from keybump.project import Project
+from keybump.bump_types import *
+from keybump.formatter import *
+from keybump.git_utils import *
+from keybump.shell_utils import *
+from keybump.package_utils import *
+
+
+REVIEW_CHANGELOG_BANNER = """
+edit the changelog summaries. press <enter> to complete:
+========================================================
+"""
+
+
+# entry point..
+
+
+def main(options, args):
+  config = KeybumpConfig.from_cli_options(options)
+  project = Project(config)
+
+  if not project.has_initial_tag:
+    project.setup_initial_release()
+
+  project.parse_git_tags()
+  project.parse_versions()
+  project.parse_releases()
+
+  if not config.bump_type:
+    info(project)
+    exit(0)
+
+  ensure_clean_index(config.skip_interactive)
+
+  # increment the version..
+  new_release = project.new_release()
+
+  # print the diff
+  info(new_release)
+
+  # todo: add optional step to add a separate [version]-dev..
+  # https://github.com/gregorynicholas/keybump/issues/3
+  # setup the dev new version..
+  # dev_version = new_version + '-dev'
+
+  changelog_summary = new_release.format_changelog_summary()
+
+  # todo: add inline changelog summary editing..
+  # https://github.com/gregorynicholas/keybump/issues/4
+  # present string to user to customize before continuing..
+  # if not config.skip_interactive:
+  #   readline.set_startup_hook(
+  #     lambda: readline.insert_text(changelog_summary))
+  #   changelog_summary = input(REVIEW_CHANGELOG_BANNER)
+
+  # add the release changelog summary to the changelog file..
+  project.changelog.prepend(changelog_summary)
+
+  if not config.skip_interactive:
+    # todo: add ANSI/colorama and remove excess chars..
+    if not choice("""
+  ========================================================
+  review + edit changelog summary file: {}.
+
+  when satisfied, save the uncommitted file and enter a response below to
+  continue or not.
+
+
+  continue with the release bump?""".format(project.changelog_file)):
+      fail("keybump exiting..")
+      # todo: rollback flow here?
+      # checkout changed files..?
+
+  # todo: rollback flow here?
+
+  # optional step to set python __init__.py version..
+  if not config.skip_set_init_py_version:
+    set_init_py_version(new_version)
+
+  # optional step to set python setup.py version..
+  if not config.skip_set_setup_py_version:
+    set_setup_py_version(new_version)
+
+  if not config.skip_commit:
+    make_git_commit(config.changelog_file, new_release.tag_msg)
+
+  if not config.skip_tag:
+    make_git_tag(new_release.tag_msg, new_release.version_num)
+
+  if not config.skip_push:
+    push_to_remote()
+
+  info("""
+  ========================================================
+  release complete: {}.
+  """.format(new_release.tag_msg))
+
+  # optional pypi releases..
+
+  if not config.pypi_distribute:
+    setup_py_distribute()
+    info("version built + released and uploaded to python package index..")
+
+  project.releases.append(new_release)
+  exit(0)
+
+
+parser = OptionParser(
+  description="description: keybump makes following the semantic versioning "
+ "specification a breeze. \n"
+ "if called with no options, keybump will print the current git repository's "
+ "tag + version name",
+  prog="keybump",
+  usage="%progs [options]")
+
+parser.add_option(
+  "--config", dest="config_file",
+  default=KeybumpConfig.DEFAULT_CONFIG_FILE,
+  help="path to a keybump configuration file.")
+
+parser.add_option(
+  "--skip-interactive", dest="skip_interactive", action="store_true",
+  default=KeybumpConfig.DEFAULT_SKIP_INTERACTIVE,
+  help="skips interactive command line interface.")
+
+parser.add_option(
+  "--bump", dest="bump_type", choices=BUMP_TYPES,
+  help="""version bump type to increment. must be
+  one of:
+    major [x].x.x
+    minor x.[x].x
+    patch x.x.[x]""")
+
+parser.add_option(
+  "--skip-set-init-py", dest="skip_set_init_py_version", action="store_true",
+  default=KeybumpConfig.DEFAULT_SKIP_SET_INIT_PY_VERSION,
+  help="skips setting the new version string in the project root's __init__.py")
+
+parser.add_option(
+  "--skip-set-setup-py", dest="skip_set_setup_py_version", action="store_true",
+  default=KeybumpConfig.DEFAULT_SKIP_SET_SETUP_PY_VERSION,
+  help="skips setting the new version string in the setup.py")
+
+parser.add_option(
+  "--skip-commit", dest="skip_commit", action="store_true",
+  default=KeybumpConfig.DEFAULT_SKIP_COMMIT,
+  help="skips creating a git tag at the current HEAD")
+
+parser.add_option(
+  "--skip-tag", dest="skip_tag", action="store_true", default=KeybumpConfig.DEFAULT_SKIP_TAG,
+  help="skips creating a git tag at the current HEAD")
+
+parser.add_option(
+  "--skip-push", dest="skip_push", action="store_true",
+  default=KeybumpConfig.DEFAULT_SKIP_PUSH,
+  help="skips pushing to the remote origin")
+
+parser.add_option(
+  "--pypi-dist", dest="pypi_distribute", action="store_true",
+  default=KeybumpConfig.DEFAULT_PYPI_DISTRIBUTE,
+  help="build the release and upload to the python package index")
+
+# todo: implement message formats as cli options..
+# https://github.com/gregorynicholas/keybump/issues/5
+
+parser.add_option(
+  "--changelog-file", dest="changelog_file", default=KeybumpConfig.DEFAULT_CHANGELOG_FILE,
+  help="path to the changelog history file.")
+
+parser.add_option(
+  "--changelog-fmt", dest="changelog_fmt", default=KeybumpConfig.DEFAULT_CHANGELOG_FMT,
+  help="string format of the changelog version summary")
+
+parser.add_option(
+  "--summaryitem-fmt", dest="summaryitem_fmt",
+  default=KeybumpConfig.DEFAULT_SUMMARY_ITEM_PREFIX,
+  help="string format of a changelog item summary")
+
+parser.add_option(
+  "--git-commit-fmt", dest="commit_msg_fmt", default=KeybumpConfig.DEFAULT_COMMIT_MSG_FMT,
+  help="string format of the git commit message")
+
+parser.add_option(
+  "--git-tag-fmt", dest="tag_msg_fmt", default=KeybumpConfig.DEFAULT_TAG_MSG_FMT,
+  help="string format of the git tag")
+
+parser.add_option(
+  "--datestr-fmt", dest="datestr_fmt", default=KeybumpConfig.DEFAULT_DATESTR_FMT,
+  help="string format for release dates")
+
+
+if __name__ == "__main__":
+  main(*parser.parse_args())
