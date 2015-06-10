@@ -1,6 +1,7 @@
+# python compiled code
 *.py[co]
 
-# Packages
+# packages
 *.egg
 *.egg-info
 dist
@@ -14,19 +15,20 @@ develop-eggs
 .installed.cfg
 *.swp
 
-# Installer logs
+# installer logs
 pip-log.txt
 
-# Unit test / coverage reports
+# unit test / coverage reports
 .coverage
 .tox
 
-#Translations
+# translations
 *.mo
 
-#Mr Developer
+# mr developer
 .mr.developer.cfg
 
+# sphinx docs
 docs/_build
 docs/build
 .DS_Store
@@ -36,3 +38,6 @@ objects.inv
 /*.html
 /_static/
 /_sources/
+
+# osx files
+.DS_Store

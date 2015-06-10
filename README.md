@@ -14,6 +14,7 @@ manage your versioning like a boss .
 links:
 * [source](http://github.com/gregorynicholas/keybump)
 * [github docs](http://gregorynicholas.github.io/keybump)
+* [issues](http://github.com/gregorynicholas/keybump/issues)
 * [python package](http://packages.python.org/keybump)
 * [travis-ci](http://travis-ci.org/gregorynicholas/keybump)
 * [semantic versioning specification](http://semver.org)
