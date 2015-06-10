@@ -8,13 +8,16 @@
   :license: MIT, see LICENSE for more details.
 """
 from __future__ import unicode_literals
-from keybump.shell_utils import *
+from keybump.shell_utils import info, fail
+from keybump.shell_utils import sh, shell, choice
 
 
 __all__ = ['get_current_git_tag', 'get_git_tags', 'get_latest_git_tag',
-'git_is_clean', 'git_diff_files', 'git_checkout', 'git_stash', 'make_git_commit',
-'make_git_tag', 'push_to_remote', 'ensure_clean_index', 'has_unstaged_changes',
-'get_unstaged_files', 'has_uncommitted_changes', 'get_uncommitted_files']
+  'git_is_clean', 'git_diff_files', 'git_checkout', 'git_stash',
+  'make_git_commit', 'make_git_tag', 'push_to_remote', 'ensure_clean_index',
+  'has_unstaged_changes', 'get_unstaged_files', 'has_uncommitted_changes',
+  'get_uncommitted_files', 'get_commits_no_merges',
+]
 
 
 GITHUB_ISSUE_REFERENCE_KEYWORDS = [
@@ -39,21 +42,25 @@ def get_current_git_tag():
     :returns: string of the current git tag on the git index, not the latest
               tag version created.
   """
-  return sh("git describe --tags").strip().splitlines()[0]
+  tag = shell("git describe --tags").output()[0]
+  if "-" in tag:
+    tag = tag.split('-')[0]
+  # TODO: test semantic ver here?
+  return tag
 
 
 def get_git_tags():
   """
     :returns: list of git tags, sorted by the date of the commit it points to.
   """
-  return sh("git for-each-ref --format='%(tag)' refs/tags").splitlines()
+  return shell("git for-each-ref --format='%(tag)' refs/tags").output()
 
 
 def get_latest_git_tag():
   """
     :returns: list of git tags, sorted by the date of the commit it points to.
   """
-  return sh("git describe --tags --abbrev=0").strip()
+  return shell("git describe --tags --abbrev=0").output()
 
 
 def git_is_clean():
@@ -69,18 +76,21 @@ def git_is_clean():
 
 
 def has_unstaged_changes():
-  return len(sh("git diff-files --ignore-submodules").strip()) > 0
+  return len(shell("git diff-files --ignore-submodules").output()) > 0
 
 def get_unstaged_files():
-  return sh("git diff-files --name-status -r --ignore-submodules")
+  return shell(
+    "git diff-files --name-status -r --ignore-submodules").output()
 
 
 
 def has_uncommitted_changes():
-  return len(sh("git diff-index --cached HEAD --ignore-submodules").strip()) > 0
+  return len(shell(
+    "git diff-index --cached HEAD --ignore-submodules").output()) > 0
 
 def get_uncommitted_files():
-  return sh("git diff-index --cached --name-status -r --ignore-submodules HEAD")
+  return shell(
+    "git diff-index --cached --name-status -r --ignore-submodules HEAD").output()
 
 
 
@@ -88,8 +98,8 @@ def git_diff_files():
   """
     :returns: list of string names of the files that are dirty.
   """
-  files = sh("git diff --minimal --numstat")
-  return [x.split("\t")[-1] for x in files.splitlines()]
+  files = shell("git diff --minimal --numstat").output()
+  return [x.split("\t")[-1] for x in files]
 
 
 def git_checkout(id):
@@ -97,21 +107,21 @@ def git_checkout(id):
     :param id: string identifier of the commit'ish to checkout.
   """
   info('checking out: "{}"', id)
-  sh("git checkout {}", id)
+  return shell("git checkout {}".format(id))
 
 
 def git_stash():
   """
   stashes current changes in git.
   """
-  sh("git stash")
+  return shell("git stash")
 
 
 def get_first_commit():
   """
   returns the first commit with a oneline prettyprint.
   """
-  sh("git log --format=\"%H\" --pretty=oneline --reverse")
+  return shell("git log --format=\"%H\" --pretty=oneline --reverse")
 
 
 def get_commits(start, to, format, grep):
@@ -145,9 +155,18 @@ def get_commits(start, to, format, grep):
   command = "git log --grep=\"^{}\" -E --format='{}' {}".format(
     grep, format, commit_range)
 
-  commits = sh(command).split('\n{}\n'.format(delimiter))
+  commits = shell(command).output().split('\n{}\n'.format(delimiter))
   for commit in commits:
     parse_raw_commit(commit)
+
+
+def get_commits_no_merges(to):
+  """
+    :param to:
+  """
+  separator = "__||__"
+  logs = shell("git log --no-merges --pretty=%B{} {}..".format(separator, to))
+  return [_.strip() for _ in logs.output()[0].split(separator)]
 
 
 def parse_raw_commit(commit):
@@ -163,7 +182,8 @@ def make_git_commit(changelog_file, message):
     :param message: string message for the commit.
   """
   info('making git commit: "{}"', message)
-  sh("git add {} && git commit -am {}", changelog_file, message)
+  return shell(
+    "git add {} && git commit -am {}".format(changelog_file, message))
 
 
 def make_git_tag(msg, tag_name):
@@ -171,7 +191,7 @@ def make_git_tag(msg, tag_name):
     :param tag_name: string name for the tag.
   """
   info('making git tag: "{}"', tag_name)
-  sh("git tag {} -m {}", tag_name, msg)
+  return shell("git tag {} -m {}".format(tag_name, msg))
 
 
 def push_to_remote():
@@ -179,7 +199,7 @@ def push_to_remote():
   pushes current branch and tags to remote.
   """
   # don't call --all here on purpose..
-  sh("git push && git push --tags")
+  return shell("git push && git push --tags")
 
 
 def ensure_clean_index(skip_interactive=False, callback=None):

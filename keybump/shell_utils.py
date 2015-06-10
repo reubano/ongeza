@@ -13,10 +13,13 @@ from logging import getLogger, DEBUG
 from sys import exit
 from subprocess import Popen
 from subprocess import PIPE, STDOUT
+from shell import shell, Shell
 
 
 __all__ = [
   'sh', 'stderr', 'stdout', 'fail', 'info', 'input', 'choice', 'write',
+  # proxy shell package objects..
+  'shell', 'Shell',
 ]
 
 

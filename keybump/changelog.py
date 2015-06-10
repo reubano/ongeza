@@ -10,7 +10,8 @@
 from __future__ import unicode_literals
 from os import getcwd
 from os import path
-from keybump.shell_utils import *
+from keybump.shell_utils import info, fail
+from keybump.shell_utils import write, shell
 
 
 __all__ = ['Changelog']

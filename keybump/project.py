@@ -15,7 +15,8 @@ from keybump import version
 from keybump.changelog import Changelog
 from keybump.release import Release
 from keybump.git_utils import *
-from keybump.shell_utils import *
+from keybump.shell_utils import info, fail
+from keybump.shell_utils import write, shell, choice
 from keybump.package_utils import *
 
 
@@ -270,13 +271,12 @@ class Project(object):
 
   def get_changelog_summaries_since(self, latest_tag):
     """
+    returns string list of git commit messages between the `latest_tag`
+    and the latest commit.
+
       :param latest_tag:
-      :returns: string list of git commit messages between the `latest_tag`
-        and the latest commit
     """
-    sep = "__||__"
-    rv = sh("git log --no-merges --pretty=%B{} {}..", sep, latest_tag)
-    return [x.strip() for x in rv.split(sep)]
+    return get_commits_no_merges(latest_tag)
 
 
   def today_str(self):

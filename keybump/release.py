@@ -11,8 +11,8 @@ from __future__ import unicode_literals
 import re
 from datetime import datetime
 from keybump import version
+from keybump.shell_utils import info, fail
 from keybump.bump_types import *
-from keybump.shell_utils import *
 
 
 __all__ = ['Release']
