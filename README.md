@@ -55,7 +55,7 @@ check that the correct version of git + python are installed
 
 install keybump with pip (recommended to lock in the version)
 
-    $ pip install keybump==3.0.0
+    $ pip install keybump==3.0.1
 
 -----
 
