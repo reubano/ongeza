@@ -60,7 +60,7 @@ def get_latest_git_tag():
   """
     :returns: list of git tags, sorted by the date of the commit it points to.
   """
-  return shell("git describe --tags --abbrev=0").output()
+  return shell("git describe --tags --abbrev=0").output()[0]
 
 
 def git_is_clean():
