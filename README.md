@@ -1,26 +1,35 @@
 keybump
 =======
 
-manage your versioning like a boss .
+manage your versioning like a boss
 
-* keybump is an opinionated command-line app to manage versioning workflow + dist + releasing.
-* keybump makes following the [semantic versioning specification](http://semver.org) a breeze.
-* keybump helps to automate the tedious task of summarizing changes from one version to the next by intelligently parsing the commit messages.
-
-
-[![Build Status](https://secure.travis-ci.org/gregorynicholas/keybump.svg?branch=develop)](https://travis-ci.org/gregorynicholas/keybump)
+* keybump is an opinionated command-line app to manage versioning workflow + dist + releasing
+* keybump makes following the [semantic versioning specification](http://semver.org) a breeze
+* keybump helps to automate the tedious task of summarizing changes from one version to the next by intelligently parsing the commit messages
 
 
-links:
-* [source](http://github.com/gregorynicholas/keybump)
-* [github docs](http://gregorynicholas.github.io/keybump)
-* [issues](http://github.com/gregorynicholas/keybump/issues)
-* [python package](http://packages.python.org/keybump)
-* [travis-ci](http://travis-ci.org/gregorynicholas/keybump)
-* [semantic versioning specification](http://semver.org)
+<br>
+**build-status:**
+
+`master  ` [![travis-ci build-status: master](https://secure.travis-ci.org/gregorynicholas/keybump.svg?branch=master)](https://travis-ci.org/gregorynicholas/keybump)
+<br>
+`develop ` [![travis-ci build-status: develop](https://secure.travis-ci.org/gregorynicholas/keybump.svg?branch=develop)](https://travis-ci.org/gregorynicholas/keybump)
 
 
+**links:**
+
+- [homepage](http://gregorynicholas.github.io/keybump)
+- [source](http://github.com/gregorynicholas/keybump)
+- [python-package](http://packages.python.org/keybump)
+- [changelog](https://github.com/gregorynicholas/keybump/blob/master/CHANGES.md)
+- [github-issues](http://github.com/gregorynicholas/keybump/issues)
+- [travis-ci](http://travis-ci.org/gregorynicholas/keybump)
+- [semantic versioning specification](http://semver.org)
+
+
+<br>
 -----
+<br>
 
 
 ### introduction
@@ -42,22 +51,29 @@ keybump requires the following in order to run properly:
 * [python >= *2.5*](http://python.org)
 * [git >= *1.8*](http://git-scm.org)
 
+
 check that the correct version of git + python are installed
 
     $ python --version
     $ git --version
 
 
+<br>
 -----
+<br>
 
 
 ### installation
 
-install keybump with pip (recommended to lock in the version)
+install keybump with pip
 
     $ pip install keybump==3.0.1
 
+
+<br>
 -----
+<br>
+
 
 ### usage
 
