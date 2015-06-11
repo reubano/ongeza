@@ -9,9 +9,6 @@
   :license: MIT, see LICENSE for more details.
 """
 from __future__ import unicode_literals
-import sys
-from os import getcwd
-from os import path
 from sys import exit
 from optparse import OptionParser
 from keybump.config import KeybumpConfig
