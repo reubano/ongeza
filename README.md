@@ -14,6 +14,7 @@ manage your versioning like a boss .
 links:
 * [source](http://github.com/gregorynicholas/keybump)
 * [github docs](http://gregorynicholas.github.io/keybump)
+* [issues](http://github.com/gregorynicholas/keybump/issues)
 * [python package](http://packages.python.org/keybump)
 * [travis-ci](http://travis-ci.org/gregorynicholas/keybump)
 * [semantic versioning specification](http://semver.org)
@@ -54,7 +55,7 @@ check that the correct version of git + python are installed
 
 install keybump with pip (recommended to lock in the version)
 
-    $ pip install keybump==3.0.0
+    $ pip install keybump==3.0.1
 
 -----
 

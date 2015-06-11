@@ -10,38 +10,47 @@ from __future__ import unicode_literals
 import unittest
 from mock import patch, MagicMock
 from tests.testcase import KeybumpTestCase
-
 import keybump
 
 
 class GitUtilsTests(KeybumpTestCase):
 
-  @patch("keybump.git_utils.sh")
-  def test_get_current_git_tag(self, sh):
-    sh.return_value = "abcd1234"
+  def test_get_current_git_tag(self):
+    expected = "3.0.1"
 
-    rv = keybump.git_utils.get_current_git_tag()
-    self.assertIsNotNone(rv)
-    self.assertEquals(
-      rv, "abcd1234",
-      "'get_current_git_tag' returned: {}".format(rv))
+    tag = keybump.git_utils.get_current_git_tag()
 
-
-  def test_sh(self):
-    rv = keybump.shell_utils.sh("git describe")
-    self.assertIsInstance(rv, basestring)
+    self.assertIsNotNone(tag)
+    self.assertEquals(expected, tag,
+      "get_current_git_tag should have returned '{}' not: '{}'".format(expected, tag))
 
 
-  @patch("keybump.git_utils.sh")
-  def test_get_git_tags(self, sh):
-    sh.return_value = """0.0.0
-0.0.1"""
-    rv = keybump.git_utils.get_git_tags()
-    self.assertIsNotNone(rv)
-    self.assertIsInstance(rv, list)
-    self.assertEquals(2, len(rv))
-    self.assertEquals(rv[0], "0.0.0")
-    self.assertEquals(rv[1], "0.0.1")
+  def test_sh_shell_methods(self):
+    describe = keybump.shell_utils.sh("git describe")
+    self.assertIsInstance(describe, basestring)
+
+    describe = keybump.shell_utils.shell("git describe").output()[0]
+    self.assertIsInstance(describe, basestring)
+
+    if '-' in describe:
+      describe = describe.split('-')[0]
+
+    self.assertTrue(describe == '3.0.1')
+
+
+  def test_get_git_tags(self):
+    tags = keybump.git_utils.get_git_tags()
+    self.assertIsNotNone(tags)
+    self.assertIsInstance(tags, list)
+
+    self.assertEquals(3, len(tags),
+      'there should be 3 git tags: {} count: {}'.format(tags, len(tags)))
+
+    tag1, tag2, tag3 = tags
+
+    self.assertEquals("2.0.1", tag1)
+    self.assertEquals("3.0.0", tag2)
+    self.assertEquals("3.0.1", tag3)
 
 
   @patch("keybump.git_utils.has_unstaged_changes")
@@ -54,6 +63,8 @@ class GitUtilsTests(KeybumpTestCase):
     has_unstaged_changes.return_value = False
     has_uncommitted_changes.return_value = False
     git_is_clean.return_value = True
+
+    # TODO
     rv = keybump.git_utils.ensure_clean_index(skip_interactive=True)
     self.assertTrue(rv)
 

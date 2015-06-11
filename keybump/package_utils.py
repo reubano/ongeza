@@ -8,7 +8,8 @@
   :license: MIT, see LICENSE for more details.
 """
 from __future__ import unicode_literals
-from keybump.shell_utils import *
+from keybump.shell_utils import info, fail
+from keybump.shell_utils import write, shell
 
 
 __all__ = ['set_version_in_file', 'set_init_py_version', 'set_setup_py_version',
@@ -58,5 +59,5 @@ def setup_py_distribute():
   """
   uploads a dist build to the python package index.
   """
-  sh("{} setup.py clean sdist upload", sys.executable)
+  return shell("{} setup.py clean sdist upload".format(sys.executable))
 

@@ -8,3 +8,6 @@
   :license: MIT, see LICENSE for more details.
 """
 from __future__ import unicode_literals
+
+
+__version__ = '3.0.1'
