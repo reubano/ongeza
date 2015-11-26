@@ -33,7 +33,7 @@ parser.add_argument(
 	help='increase output verbosity')
 
 parser.add_argument(
-	'-S', '--skip-commit', action='store_true', help='skip commiting version'
+	'-S', '--skip-commit', action='store_true', help='skip committing version'
 	' bumped files')
 
 parser.add_argument(
