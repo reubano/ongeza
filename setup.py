@@ -6,7 +6,7 @@ try:
 except ImportError:
     from distutils.core import setup, find_packages
 
-from Bump import __version__
+from Bump import __version__, __description__
 
 
 def read(fname):
@@ -27,7 +27,7 @@ sys.dont_write_bytecode = True
 setup(
     name="bump",
     version=__version__,
-    description="Makes following the Semantic Versioning Specification a breeze",
+    description=__description__,
     long_description=read('README.rst'),
     url='https://github.com/reubano/bump',
     license='MIT',
