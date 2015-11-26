@@ -20,6 +20,8 @@ __license__ = 'MIT'
 __copyright__ = 'Copyright 2014 Reuben Cummings'
 
 import os
+import semver
+
 from fnmatch import fnmatch
 from subprocess import call, check_output, CalledProcessError
 
@@ -94,11 +96,6 @@ class Project(object):
             return sh(cmd, True).lstrip('v').rstrip()
         else:
             raise Exception('%s is not a directory' % (self.dir))
-
-    @property
-    def fmt_version(self):
-        # split the version into a list of ints.
-        return map(int, self.version.split('.'))
 
     @property
     def is_clean(self):
@@ -180,7 +177,7 @@ class Project(object):
             % new_version)
         return sh(cmd, True).splitlines()[0] is '@'
 
-    def bump(self, bump_type, version):
+    def bump(self, bump_type):
         """
         Parameters
         ----------
@@ -193,18 +190,12 @@ class Project(object):
         -------
         concatenated string of the incremented version name.
         """
-        version = self.fmt_version
+        switch = {
+            'm': semver.bump_major,
+            'n': semver.bump_minor,
+            'p': semver.bump_patch}
 
-        try:
-            switch = {
-                'm': lambda: [version[0] + 1, 0, 0],
-                'n': lambda: [version[0], version[1] + 1, 0],
-                'p': lambda: [version[0], version[1], version[2] + 1]}
-        except ValueError:
-            raise Exception(
-                'Invalid version: %i. Please use x.y.z format.' % version)
-        else:
-            return '.'.join(map(str, switch.get(bump_type)()))
+        return switch.get(bump_type)(self.version)
 
 
 class Git(object):
