@@ -38,14 +38,14 @@ class Project(object):
     class representing a project object.
     """
 
-    def __init__(self, dir, file=None):
+    def __init__(self, dir_, file_=None, version=None):
         """
         Parameters
         ----------
         dir : str
             the project directory
 
-        file : str
+        file_ : str
             the file to search for a version
 
         Examples
@@ -53,49 +53,22 @@ class Project(object):
         >>> Project(os.curdir)  #doctest: +ELLIPSIS
         <Bump.Project object at 0x...>
         """
+        self.dir = dir_
+
+        if not os.path.isdir(self.dir):
+            raise Exception('%s is not a directory' % (self.dir))
+
         self.current_tag = None
         self.bumped = False
-        self.file = file
-        self.dir = dir
+        self.file = file_
 
-    @property
-    def has_tag(self):
-        # Check if repo has any git tags.
-        if os.path.isdir(self.dir):
-            return sh('cd %s; git tag' % (self.dir), True)
+        if version:
+            self.version = version
         else:
-            raise Exception('%s is not a directory' % (self.dir))
-
-    @property
-    def versioned_files(self):
-        # Get list of files with version metadata.
-        versioned_files = []
-
-        if (self.file):
-            print self.file
-            versioned_files.append(self.file)
-        else:
-            cmd = "git ls-tree --full-tree --name-only -r HEAD"
-            git_files = sh(cmd, True).splitlines()
-
-            file_names = [
-                'pearfarm.spec', 'setup.cfg', 'setup.py', '*/__init__.py',
-                '*.xml', '*.json']
-
-            for git_file in git_files:
-                if any(fnmatch(git_file, file) for file in file_names):
-                    versioned_files.append(git_file)
-
-        return versioned_files
-
-    @property
-    def version(self):
-        # Get the current release version from git.
-        if os.path.isdir(self.dir):
             cmd = 'cd %s; git describe --tags --abbrev=0' % (self.dir)
-            return sh(cmd, True).lstrip('v').rstrip()
-        else:
-            raise Exception('%s is not a directory' % (self.dir))
+            self.version = sh(cmd, True).lstrip('v').rstrip()
+
+        self.has_tag = sh('cd %s; git tag' % (self.dir), True)
 
     @property
     def is_clean(self):
@@ -125,52 +98,70 @@ class Project(object):
         files = sh("cd %s; git diff --minimal --numstat" % self.dir, True)
         return [x.split("\t")[-1] for x in files.splitlines()]
 
-    def set_versions(self, new_version, version, **kwargs):
-        i = kwargs.get('i', 0)
-        files = kwargs.get('files', self.versioned_files)
-
-        try:
-            file = files[i]
-            i += 1
-        except IndexError:
-            return
-
-        if not version:
-            # get all lines in file
-            cmd = 'cd %s; grep -ine "" %s' % (self.dir, file)
-
-            try:
-                lines = sh(cmd, True)
-            except CalledProcessError:
-                lines = None
-
-            if lines:
-                # escape double quotes
-                escaped = lines.replace('"', '\\"')
-                # find first line containing a version number and the word
-                # 'version'
-                cmd = 'echo "%s" | grep version | grep -m1 "[0-9]*\.[0-9]*\.[0-9]*"' % escaped
-                try:
-                    rep_line = sh(cmd, True)
-                except Exception:
-                    cmd = None
-                else:
-                    rep_line_num = rep_line.split(':')[0]
-                    # replace with new version number
-                    sh("cd %s" % self.dir)
-                    cmd = ("sed -i '' '%ss/[0-9]*\.[0-9]*\.[0-9]*/%s/g' %s"
-                        % (rep_line_num, new_version, file))
-            else:
-                cmd = None
+    def gen_versioned_files(self):
+        if (self.file):
+            yield self.file
         else:
-            # replace current version with new version only if the line
-            # contains the word 'version'
-            cmd = ("cd %s; sed -i '' '/version/s/%s/%s/g' %s"
-                % (self.dir, version, new_version, file))
+            cmd = "git ls-tree --full-tree --name-only -r HEAD"
+            git_files = sh(cmd, True).splitlines()
+            no_matches = True
 
-        sh(cmd) if cmd else None
+            wave_one = [
+                '*.spec', 'setup.cfg', 'setup.py', '*/__init__.py',
+                '*.xml', '*.json']
+
+            for git_file in git_files:
+                if any(fnmatch(git_file, file) for file in wave_one):
+                    yield git_file
+                    no_matches = False
+
+            if no_matches:
+                wave_two = ['*.php', '*.py']
+
+                for git_file in git_files:
+                    if any(fnmatch(git_file, file) for file in wave_two):
+                        yield git_file
+
+    def set_versions(self, new_version, version):
+        for file_ in self.gen_versioned_files():
+            if not version:
+                # get all lines in file
+                cmd = 'cd %s; grep -ine "" %s' % (self.dir, file_)
+
+                try:
+                    lines = sh(cmd, True)
+                except CalledProcessError:
+                    lines = None
+
+                if lines:
+                    # escape double quotes
+                    escaped = lines.replace('"', '\\"')
+                    # find first line containing a version number and the word
+                    # 'version'
+                    cmd = 'echo "%s" | grep version' % escaped
+                    cmd += ' | grep -m1 "[0-9]*\.[0-9]*\.[0-9]*"'
+
+                    try:
+                        rep_line = sh(cmd, True)
+                    except Exception:
+                        cmd = None
+                    else:
+                        rep_line_num = rep_line.split(':')[0]
+                        # replace with new version number
+                        sh("cd %s" % self.dir)
+                        cmd = ("sed -i '' '%ss/[0-9]*\.[0-9]*\.[0-9]*/%s/g' %s"
+                            % (rep_line_num, new_version, file_))
+                else:
+                    cmd = None
+            else:
+                # replace current version with new version only if the line
+                # contains the word 'version'
+                cmd = ("cd %s; sed -i '' '/version/s/%s/%s/g' %s"
+                    % (self.dir, version, new_version, file_))
+
+            sh(cmd) if cmd else None
+
         self.bumped = self.is_dirty
-        return self.set_versions(new_version, version, i=i, files=files)
 
     def check_version(self, new_version):
         cmd = ("echo %s | sed 's/[0-9]*\.[0-9]*\.[0-9]*/@/g'"
