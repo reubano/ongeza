@@ -81,11 +81,14 @@ def main():
             "\n".join(project.dirty_files))
     elif (project.version and args.bump_type):
         new_version = project.bump(args.bump_type)
-        project.set_versions(new_version, project.version)
 
-        if project.bumped:
-            msg = 'Bumped from version %s to %s' % (
-                project.version, new_version)
+        for wave in [1, 2]:
+            project.set_versions(new_version, project.version, wave)
+
+            if project.bumped:
+                msg = 'Bumped from version %s to %s' % (
+                    project.version, new_version)
+                break
         else:
             raise Exception("Couldn't find a version to bump.")
     elif args.version:  # set the version
