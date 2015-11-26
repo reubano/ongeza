@@ -98,32 +98,24 @@ class Project(object):
         files = sh("cd %s; git diff --minimal --numstat" % self.dir, True)
         return [x.split("\t")[-1] for x in files.splitlines()]
 
-    def gen_versioned_files(self):
+    def gen_versioned_files(self, wave):
         if (self.file):
             yield self.file
         else:
             cmd = "git ls-tree --full-tree --name-only -r HEAD"
             git_files = sh(cmd, True).splitlines()
-            no_matches = True
-
             wave_one = [
                 '*.spec', 'setup.cfg', 'setup.py', '*/__init__.py',
                 '*.xml', '*.json']
 
+            switch = {1: wave_one, 2: ['*.php', '*.py']}
+
             for git_file in git_files:
-                if any(fnmatch(git_file, file) for file in wave_one):
+                if any(fnmatch(git_file, file) for file in switch[wave]):
                     yield git_file
-                    no_matches = False
 
-            if no_matches:
-                wave_two = ['*.php', '*.py']
-
-                for git_file in git_files:
-                    if any(fnmatch(git_file, file) for file in wave_two):
-                        yield git_file
-
-    def set_versions(self, new_version, version):
-        for file_ in self.gen_versioned_files():
+    def set_versions(self, new_version, version, wave=1):
+        for file_ in self.gen_versioned_files(wave):
             if not version:
                 # get all lines in file
                 cmd = 'cd %s; grep -ine "" %s' % (self.dir, file_)
