@@ -100,7 +100,7 @@ def main():
 
     if (project.bumped and not args.skip_commit):
         message = args.commit_format.format(version=new_version)
-        git.add(project.versioned_files)
+        git.add(project.dirty_files)
         git.commit(message)
 
     tag = (project.bumped and args.tag and project.version)
