@@ -35,6 +35,12 @@ setup(
     author_email='reubano@gmail.com',
     packages=packages,
     include_package_data=True,
+    test_suite='nose.collector',
+    tests_require=[
+        'nose',
+        'nose-cov',
+        'mock',
+    ],
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Console',
@@ -44,6 +50,7 @@ setup(
         'Operating System :: MacOS :: MacOS X',
         'Operating System :: Microsoft :: Windows',
         'Programming Language :: Python',
+        'Topic :: Software Development :: Libraries :: Python Modules'
         'Topic :: Software Development :: Version Control',
     ],
     platforms=['MacOS X', 'Windows', 'Linux'],
