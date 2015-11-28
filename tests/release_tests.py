@@ -13,8 +13,8 @@ from tests.testcase import KeybumpTestCase
 
 
 class ReleaseTests(KeybumpTestCase):
-  pass
+    pass
 
 
 if __name__ == "__main__":
-  unittest.main(exit=False)
+    unittest.main(exit=False)
