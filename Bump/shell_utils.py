@@ -3,7 +3,7 @@
 
 """
 bump.shell_utils
-~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~
 
 helpers for working with the shell.
 
