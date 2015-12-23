@@ -1,3 +1,43 @@
-export/*
+# python compiled code
+*.py[co]
+
+# packages
+*.egg
+*.egg-info
+dist
+build
+eggs
+parts
+# bin
+var
+sdist
+develop-eggs
+.installed.cfg
+*.swp
+
+# installer logs
+pip-log.txt
+
+# unit test / coverage reports
+.coverage
+.tox
+
+# translations
+*.mo
+
+# mr developer
+.mr.developer.cfg
+
+# sphinx docs
+docs/_build
+docs/build
 .DS_Store
-*.pyc
+.nojekyll
+searchindex.js
+objects.inv
+/*.html
+/_static/
+/_sources/
+
+# osx files
+.DS_Store

@@ -1,44 +1,63 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
+# vim: sw=4:ts=4:expandtab
 
+"""
 bump
-----
+~~~~
 
 An automated way to follow the Semantic Versioning Specification
 
+Examples:
+    basic usage::
+
+        >>> from os import path as p
+        >>> project = Project(p.abspath(p.dirname(p.dirname(__file__))))
+        >>> project.current_version  == __version__
+        True
+
+Attributes:
+    DEFAULT_TAG_FMT (str): The default tag format
+    DEFAULT_TAG_MSG_FMT (str): The default tag message format
+    DEFAULT_COMMIT_MSG_FMT (str): The default commit message format
 """
 
-__title__ = 'bump'
-__package_name__ = 'bump'
-__author__ = 'Reuben Cummings'
-__description__ = 'An automated way to follow the Semantic Versioning '
-__description__ += 'Specification'
-__email__ = 'reubano@gmail.com'
-__version__ = '1.3.0'
-__license__ = 'MIT'
-__copyright__ = 'Copyright 2014 Reuben Cummings'
+from __future__ import (
+    absolute_import, division, print_function, with_statement,
+    unicode_literals)
 
 import os
 import semver
+import pygogo as gogo
 
 from fnmatch import fnmatch
-from subprocess import call, check_output, CalledProcessError
+from subprocess import CalledProcessError
+
+from .git_utils import Git
+from .shell_utils import sh
+
+__version__ = '1.4.0'
+
+__title__ = 'bump'
+__author__ = 'Reuben Cummings'
+__description__ = 'An automated way to follow the Semantic Versioning'
+__description__ += 'Specification'
+__email__ = 'reubano@gmail.com'
+__license__ = 'MIT'
+__copyright__ = 'Copyright 2015 Reuben Cummings'
+
+DEFAULT_TAG_FMT = 'v{version}'
+DEFAULT_TAG_MSG_FMT = 'Version {version} Release'
+DEFAULT_COMMIT_MSG_FMT = 'bump to version {version}'
+
+logger = gogo.Gogo(__name__).logger
 
 
-def sh(cmd, output=False):
-    if output:
-        return check_output(cmd, shell=True)
-    else:
-        return call(cmd, shell=True) is 0
-
-
-class Project(object):
+class Project(Git):
     """
     class representing a project object.
     """
 
-    def __init__(self, dir_, file_=None, version=None):
+    def __init__(self, dir_, file_=None, version=None, verbose=False):
         """
         Parameters
         ----------
@@ -50,78 +69,68 @@ class Project(object):
 
         Examples
         --------
-        >>> Project(os.curdir)  #doctest: +ELLIPSIS
-        <Bump.Project object at 0x...>
+        >>> Project(os.curdir)  # doctest: +ELLIPSIS
+        <bump.Project object at 0x...>
         """
-        self.dir = dir_
+        if not os.path.isdir(dir_):
+            raise Exception('%s is not a directory' % dir_)
 
-        if not os.path.isdir(self.dir):
-            raise Exception('%s is not a directory' % (self.dir))
+        super(Project, self).__init__(dir_, verbose)
 
-        self.current_tag = None
         self.bumped = False
         self.file = file_
 
         if version:
             self.version = version
         else:
-            cmd = 'cd %s; git describe --tags --abbrev=0' % (self.dir)
-            self.version = sh(cmd, True).lstrip('v').rstrip()
-
-        self.has_tag = sh('cd %s; git tag' % (self.dir), True)
+            self.version = self.current_version
 
     @property
-    def is_clean(self):
+    def current_version(self):
         """
-        Returns
-        -------
-        boolean if there is a dirty index.
+        :returns: string of the current version parsed from most recent git tag
         """
-        return sh("cd %s; git diff --quiet" % self.dir)
+        # what to do on first time run? no tags yet..
+        if self.current_tag:
+            version = self.current_tag.lstrip('v')
+        else:
+            version = None
+
+        if version and not version_is_valid(version):
+            version = None
+
+        return version
 
     @property
-    def is_dirty(self):
+    def versions(self):
         """
-        Returns
-        -------
-        boolean if there is a dirty index.
+        :returns: iterator of all valid versions parsed from the git tags
         """
-        return not self.is_clean
-
-    @property
-    def dirty_files(self):
-        """
-        Returns
-        -------
-        list of string names of the dirty files.
-        """
-        files = sh("cd %s; git diff --minimal --numstat" % self.dir, True)
-        return [x.split("\t")[-1] for x in files.splitlines()]
+        versions = (t.lstrip('v') for t in self.tags)
+        return (v for v in versions if version_is_valid(v))
 
     def gen_versioned_files(self, wave):
-        if (self.file):
+        if self.file:
             yield self.file
         else:
-            cmd = "git ls-tree --full-tree --name-only -r HEAD"
-            git_files = sh(cmd, True).splitlines()
             wave_one = [
                 '*.spec', 'setup.cfg', 'setup.py', '*/__init__.py',
                 '*.xml', '*.json']
 
             switch = {1: wave_one, 2: ['*.php', '*.py']}
 
-            for git_file in git_files:
+            for git_file in self.files:
                 if any(fnmatch(git_file, file) for file in switch[wave]):
                     yield git_file
 
-    def set_versions(self, new_version, version, wave=1):
+    def set_versions(self, new_version, wave=1):
         for file_ in self.gen_versioned_files(wave):
-            if not version:
+            if not self.version:
                 # get all lines in file
-                cmd = 'cd %s; grep -ine "" %s' % (self.dir, file_)
+                cmd = 'grep -ine "" %s' % file_
 
                 try:
-                    lines = sh(cmd, True)
+                    lines = sh(cmd, True, path=self.dir)
                 except CalledProcessError:
                     lines = None
 
@@ -134,13 +143,12 @@ class Project(object):
                     cmd += ' | grep -m1 "[0-9]*\.[0-9]*\.[0-9]*"'
 
                     try:
-                        rep_line = sh(cmd, True)
+                        rep_line = sh(cmd, True, path=self.dir)
                     except Exception:
                         cmd = None
                     else:
                         rep_line_num = rep_line.split(':')[0]
                         # replace with new version number
-                        sh("cd %s" % self.dir)
                         cmd = ("sed -i '' '%ss/[0-9]*\.[0-9]*\.[0-9]*/%s/g' %s"
                             % (rep_line_num, new_version, file_))
                 else:
@@ -148,17 +156,12 @@ class Project(object):
             else:
                 # replace current version with new version only if the line
                 # contains the word 'version'
-                cmd = ("cd %s; sed -i '' '/version/s/%s/%s/g' %s"
-                    % (self.dir, version, new_version, file_))
+                cmd = ("sed -i '' '/version/s/%s/%s/g' %s"
+                    % (self.version, new_version, file_))
 
-            sh(cmd) if cmd else None
+            sh(cmd, path=self.dir) if cmd else None
 
         self.bumped = self.is_dirty
-
-    def check_version(self, new_version):
-        cmd = ("echo %s | sed 's/[0-9]*\.[0-9]*\.[0-9]*/@/g'"
-            % new_version)
-        return sh(cmd, True).splitlines()[0] is '@'
 
     def bump(self, bump_type):
         """
@@ -169,6 +172,7 @@ class Project(object):
             m = major - [x].0.0
             n = minor - x.[y].0
             p = patch - x.y.[z]
+
         Returns
         -------
         concatenated string of the incremented version name.
@@ -178,35 +182,18 @@ class Project(object):
             'n': semver.bump_minor,
             'p': semver.bump_patch}
 
-        return switch.get(bump_type)(self.version)
+        new_version = switch.get(bump_type)(self.version)
+
+        if new_version in set(self.versions):
+            self.logger.error('version `%s` already present', new_version)
+            new_version = None
+
+        return new_version
 
 
-class Git(object):
-    """
-    class representing Git commands.
-    """
-    def __init__(self, dir):
-        """
-        Parameters
-        ----------
-        dir: directory containing the git project
-        """
-        self.dir = dir
-
-    def add(self, files):
-        files = ' '.join(files)
-        return sh('cd %s; git add %s' % (self.dir, files))
-
-    def commit(self, message):
-        return sh("cd %s; git commit -m '%s'" % (self.dir, message))
-
-    def tag(self, message, version):
-        cmd = "cd %s; git tag -sm '%s' v%s" % (self.dir, message, version)
-        return sh(cmd)
-
-    def push(self):
-        """
-        pushes current branch and tags to remote.
-        """
-        # don't call --all here on purpose..
-        return sh("cd %s; git push && git push --tags" % self.dir)
+def version_is_valid(version):
+    try:
+        return semver.parse(version)
+    except ValueError as err:
+        logger.error(err.message)
+        return False
