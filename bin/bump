@@ -97,7 +97,7 @@ def main():
         error = 'Current version: %s' % project.version
     elif project.is_dirty and not args.stash:
         error = (
-            "Can't bump the version with uncommitted changes. Please"
+            "Can't bump the version with uncommitted changes. Please "
             "commit your changes or stash the following files and try "
             "again. Optionally, run with '-a' option to auto stash these "
             "files. Dirty files:\n%s" % "\n".join(project.dirty_files))
