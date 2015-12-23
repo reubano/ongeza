@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import sys
-import Bump
+import bump
 import pkutils
 
 from os import path as p
@@ -17,19 +17,19 @@ requirements = list(pkutils.parse_requirements('requirements.txt'))
 dependencies = list(pkutils.parse_requirements('requirements.txt', dep=True))
 dev_requirements = list(pkutils.parse_requirements('dev-requirements.txt'))
 readme = pkutils.read('README.rst')
-license = Bump.__license__
-version = Bump.__version__
-title = Bump.__title__
+license = bump.__license__
+version = bump.__version__
+title = bump.__title__
 gh = 'https://github.com/reubano'
 
 
 setup(
     name=title,
     version=version,
-    description=Bump.__description__,
+    description=bump.__description__,
     long_description=readme,
-    author=Bump.__author__,
-    author_email=Bump.__email__,
+    author=bump.__author__,
+    author_email=bump.__email__,
     url='%s/%s' % (gh, title),
     download_url='%s/%s/downloads/%s*.tgz' % (gh, title, title),
     packages=find_packages(exclude=['docs', 'tests']),

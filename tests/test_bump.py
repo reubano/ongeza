@@ -14,8 +14,8 @@ import nose.tools as nt
 import pygogo as gogo
 
 from os import path as p
-from Bump import __version__ as version
-from Bump.git_utils import Git
+from bump import __version__ as version
+from bump.git_utils import Git
 # from mock import patch
 
 PARENT_DIR = p.abspath(p.dirname(p.dirname(__file__)))

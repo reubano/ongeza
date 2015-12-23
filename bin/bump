@@ -8,13 +8,13 @@ from __future__ import (
     unicode_literals)
 
 import os
-import Bump
+import bump
 
 from sys import exit
 from os import getcwd, path as p
 from argparse import RawTextHelpFormatter, ArgumentParser
 
-from Bump import Project, shell_utils as su
+from bump import Project, shell_utils as su
 
 CURDIR = p.abspath(getcwd())
 
@@ -57,16 +57,16 @@ parser.add_argument(
     '-a', '--stash', action='store_true', help='stash uncommitted changes')
 
 parser.add_argument(
-    '-f', '--tag-format', action='store', default=Bump.DEFAULT_TAG_FMT,
+    '-f', '--tag-format', action='store', default=bump.DEFAULT_TAG_FMT,
     help='git tag format')
 
 parser.add_argument(
-    '-F', '--tag-msg-format', action='store', default=Bump.DEFAULT_TAG_MSG_FMT,
+    '-F', '--tag-msg-format', action='store', default=bump.DEFAULT_TAG_MSG_FMT,
     help='git tag message format')
 
 parser.add_argument(
     '-c', '--commit-msg-format', action='store',
-    default=Bump.DEFAULT_COMMIT_MSG_FMT, help='git commit message format')
+    default=bump.DEFAULT_COMMIT_MSG_FMT, help='git commit message format')
 
 parser.add_argument(
     '-i', '--file', action='store', help='the versioned file')
@@ -86,7 +86,7 @@ def main():
     project = Project(args.dir, args.file, verbose=args.verbose)
 
     if args.version:
-        project.logger.info('bump v%s' % Bump.__version__)
+        project.logger.info('bump v%s' % bump.__version__)
         exit(0)
 
     error = None
@@ -113,7 +113,7 @@ def main():
             project.set_versions(new_version, project.version, wave)
 
             if project.bumped:
-                project.logger.info('Bumped from version %s to %s' % (
+                project.logger.info('bumped from version %s to %s' % (
                     project.version, new_version))
                 break
         else:

@@ -2,7 +2,7 @@
 # vim: sw=4:ts=4:expandtab
 
 """
-Bump
+bump
 ~~~~
 
 An automated way to follow the Semantic Versioning Specification
@@ -37,7 +37,6 @@ from .shell_utils import sh
 __version__ = '1.3.0'
 
 __title__ = 'bump'
-__package_name__ = 'bump'
 __author__ = 'Reuben Cummings'
 __description__ = 'An automated way to follow the Semantic Versioning'
 __description__ += 'Specification'
@@ -47,7 +46,7 @@ __copyright__ = 'Copyright 2015 Reuben Cummings'
 
 DEFAULT_TAG_FMT = 'v{version}'
 DEFAULT_TAG_MSG_FMT = 'Version {version} Release'
-DEFAULT_COMMIT_MSG_FMT = 'Bump to version {version}'
+DEFAULT_COMMIT_MSG_FMT = 'bump to version {version}'
 
 
 class Project(Git):
@@ -68,7 +67,7 @@ class Project(Git):
         Examples
         --------
         >>> Project(os.curdir)  # doctest: +ELLIPSIS
-        <Bump.Project object at 0x...>
+        <bump.Project object at 0x...>
         """
         if not os.path.isdir(dir_):
             raise Exception('%s is not a directory' % dir_)

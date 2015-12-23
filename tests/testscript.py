@@ -15,7 +15,7 @@ from __future__ import (
 
 import sys
 import pygogo as gogo
-import Bump
+import bump
 
 from difflib import unified_diff
 from os import path as p
@@ -85,7 +85,7 @@ if __name__ == '__main__':
 
     tests = [
         (['--help'], [], True),
-        (['--version'], [], 'bump v%s\n' % Bump.__version__),
+        (['--version'], [], 'bump v%s\n' % bump.__version__),
     ]
 
     main(script, tests)
