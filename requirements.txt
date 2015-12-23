@@ -1,3 +1,4 @@
 pyyaml==3.10
-shell==1.0.1
 semver==2.2.1
+pkutils==0.6.1
+pygogo==0.7.0

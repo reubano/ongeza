@@ -1,109 +1,65 @@
+# -*- coding: utf-8 -*-
+# vim: sw=4:ts=4:expandtab
+
 """
-    bump.shell_utils
-    ~~~~~~~~~~~~~~~~~~~
+Bump.shell_utils
+~~~~~~~~~~~~~~~
 
-    helpers for the shell.
+helpers for working with the shell.
 
-    :copyright: (c) 2015 by gregorynicholas.
-    :license: MIT, see LICENSE for more details.
+Examples:
+    basic usage::
+
+        >>> sh('echo hello world')
+        True
+        >>> sh('echo hello world', True)
+        'hello world'
+
+Attributes:
+    ENCODING (str): The module encoding
 """
-from __future__ import unicode_literals
-import sys
-from logging import getLogger, DEBUG
-from sys import exit
-from subprocess import Popen
-from subprocess import PIPE, STDOUT
-from shell import shell, Shell
+
+from __future__ import (
+    absolute_import, division, print_function, with_statement,
+    unicode_literals)
+
+import pygogo as gogo
+
+from subprocess import call, check_output
+
+logger = gogo.Gogo(__name__).logger
 
 
-__all__ = [
-    'sh', 'stderr', 'stdout', 'fail', 'info', 'input', 'choice', 'write',
-    # proxy shell package objects..
-    'shell', 'Shell',
-]
-
-
-logger = getLogger(__name__)
-logger.setLevel(DEBUG)
-
-
-def sh(command, error=None, cwd=None, *args, **kw):
+def sh(cmd, output=False, path=None):
     """
     runs an external command.
 
     if the command has a non-zero return code raise a buildfailure. you can pass
     `error=True` to allow non-zero return codes to be allowed to pass silently,
-    silently into the night. passing `cwd="some/path"` will chdir to
+    silently into the night. passing `path="some/path"` will chdir to
     "some/path" before exectuting the command.
 
         :returns: string of the captured output of the command.
     """
-    if error is None:
-        error = False
+    go = True
 
-    # helpers to auto-format the sh command string..
-    if len(args) > 0:
-        command = command.format(*args)
+    if path:
+        try:
+            call(['cd', path])
+        except OSError:
+            logger.error('No such file or directory: %s', path)
+            go = False
 
-    if len(kw) > 0:
-        command = command.format(**kw)
+    if output and go:
+        result = check_output(cmd, shell=True).strip()
+    elif go:
+        result = call(cmd, shell=True) is 0
+    elif output:
+        result = ''
+    else:
+        result = False
 
-    kwargs = {
-        'cwd': cwd,
-        'shell': True,
-        'stderr': STDOUT,
-        'stdout': PIPE,
-    }
-
-    def run():
-        p = Popen(command, **kwargs)
-        _stdout, _stderr  = p.communicate()
-
-        if _stdout is not None:
-            _stdout = _stdout.decode(sys.getdefaultencoding())
-
-        if _stderr is not None:
-            _stderr = _stderr.decode(sys.getdefaultencoding())
-
-        if p.returncode:
-            if error:
-                fail('''
-                    command: '{}'
-                    stdout: {}
-                    stderr: {}
-                ''', command, _stdout, _stderr)
-
-        return _stdout
-
-    return run()
-
-
-def stderr():
-    """
-    method to proxy stderr so it can be mocked during tests.
-    """
-    return sys.stderr
-
-
-def stdout():
-    """
-    method to proxy stdout so it can be mocked during tests.
-    """
-    return sys.stdout
-
-
-def fail(message, *args):
-    logger.error('failure: {}'.format(message))
-    if len(args) > 0:
-        message = message.format(*args)
-    print >> stderr(), "error:", message
-    exit(1)
-
-
-def info(message, *args):
-    if len(args) > 0:
-        message = str(message).format(*args)
-    print >> stdout(), message
+    return result
 
 
 def choice(msg):
@@ -112,22 +68,4 @@ def choice(msg):
 
         :returns: boolean for the True/False user response.
     """
-    return input("{}  [Yn]: ".format(msg)).upper() in ["Y", "YES", "YE"]
-
-
-def input(*args, **kw):
-    """
-    method to proxy `raw_input` so it can be mocked during tests.
-    """
-    return raw_input(*args, **kw)
-
-
-def write(path, data):
-    """
-    write a file.
-    """
-    with open(path, "w") as f:
-        if isinstance(data, basestring):
-            f.write(data)
-        else:
-            f.writelines(data)
+    return raw_input("{}  [Yn]: ".format(msg)).lower().startswith('y')

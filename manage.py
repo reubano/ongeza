@@ -14,7 +14,7 @@ def clean():
 	cmd2 = "find . -name '*.pyo' -exec rm -f {} +"
 	cmd3 = "find . -name '*~' -exec rm -f {} +"
 	cmd = '%s;%s;%s' % (cmd1, cmd2, cmd3)
-	return call(cmd, shell=True)
+	call(cmd, shell=True)
 
 
 @manager.command

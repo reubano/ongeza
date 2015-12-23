@@ -1,207 +1,158 @@
 #!/usr/bin/env python
-"""
-    bump
-    ~~~~~~~
+# -*- coding: utf-8 -*-
 
-    manage your versioning like a boss .
+""" An automated way to follow the Semantic Versioning Specification """
 
-    :copyright: (c) 2015 by gregorynicholas.
-    :license: MIT, see LICENSE for more details.
-"""
-from __future__ import unicode_literals
+from __future__ import (
+    absolute_import, division, print_function, with_statement,
+    unicode_literals)
+
+import os
+import Bump
+
 from sys import exit
-from optparse import OptionParser
-from bump.config import BumpConfig
-from bump.project import Project
-from bump.bump_types import *
-from bump.formatter import *
-from bump.git_utils import *
-from bump.shell_utils import *
-from bump.package_utils import *
+from os import getcwd, path as p
+from argparse import RawTextHelpFormatter, ArgumentParser
+
+from Bump import Project, shell_utils as su
+
+CURDIR = p.abspath(getcwd())
+
+parser = ArgumentParser(
+    description="description: bump makes following the Semantic Versioning"
+        " Specification a breeze.\nIf called with no options, bump will print "
+        "the current git repository's tag version.\nIf <dir> is not specified,"
+        " the current dir is used.", prog='bump',
+        usage='%(prog)s [options] <dir>', formatter_class=RawTextHelpFormatter)
+
+group = parser.add_mutually_exclusive_group()
+
+group.add_argument(
+    '-t', '--type', dest='bump_type', action='store', choices=['m', 'n', 'p'],
+    help="version bump type, must be one of:\n"
+        "  m = major - [x].0.0\n"
+        "  n = minor - x.[y].0\n"
+        "  p = patch - x.y.[z]")
+
+group.add_argument(
+    '-s', '--set', dest='version', action='store',
+    help='set arbitrary version number')
+
+parser.add_argument(
+    dest='dir', nargs='?', default=CURDIR,
+    help='the project directory (default: %s).\n\n' % CURDIR)
+
+parser.add_argument(
+    '-S', '--skip-commit', action='store_true', help='skip committing version'
+    ' bumped files')
+
+parser.add_argument(
+    '-T', '--tag', action='store_true', help='create git tag at HEAD with the'
+    ' bumped version number')
+
+parser.add_argument(
+    '-p', '--push', action='store_true', help='push to the remote origin')
+
+parser.add_argument(
+    '-a', '--stash', action='store_true', help='stash uncommitted changes')
+
+parser.add_argument(
+    '-f', '--tag-format', action='store', default=Bump.DEFAULT_TAG_FMT,
+    help='git tag format')
+
+parser.add_argument(
+    '-F', '--tag-msg-format', action='store', default=Bump.DEFAULT_TAG_MSG_FMT,
+    help='git tag message format')
+
+parser.add_argument(
+    '-c', '--commit-msg-format', action='store',
+    default=Bump.DEFAULT_COMMIT_MSG_FMT, help='git commit message format')
+
+parser.add_argument(
+    '-i', '--file', action='store', help='the versioned file')
+
+parser.add_argument(
+    '-v', '--version', help="Show version and exit.", action='store_true',
+    default=False)
+
+parser.add_argument(
+    '-V', '--verbose', action='store_true',
+    help='increase output verbosity')
+
+args = parser.parse_args()
 
 
-REVIEW_CHANGELOG_BANNER = """
-edit the changelog summaries. press <enter> to complete:
-========================================================
-"""
+def main():
+    project = Project(args.dir, args.file, verbose=args.verbose)
 
-
-# entry point..
-
-
-def main(options, args):
-    config = BumpConfig.from_cli_options(options)
-    project = Project(config)
-
-    if not project.has_initial_tag:
-        project.setup_initial_release()
-
-    project.parse_git_tags()
-    project.parse_versions()
-    project.parse_releases()
-
-    if not config.bump_type:
-        info(project)
+    if args.version:
+        project.logger.info('bump v%s' % Bump.__version__)
         exit(0)
 
-    ensure_clean_index(config.skip_interactive)
+    error = None
 
-    # increment the version..
-    new_release = project.new_release()
+    if not project.version and args.bump_type:
+        error = "No git tags found, please run with '-s and -T' options"
+    elif (project.version and not args.bump_type and not args.version):
+        error = 'Current version: %s' % project.version
+    elif project.is_dirty and not args.stash:
+        error = (
+            "Can't bump the version with uncommitted changes. Please"
+            "commit your changes or stash the following files and try "
+            "again. Optionally, run with '-a' option to auto stash these "
+            "files. Dirty files:\n%s" % "\n".join(project.dirty_files))
+    elif project.is_dirty:
+        project.logger.info("Stashing changes...\n")
+        project.stash()
+    elif project.version and args.bump_type:
+        new_version = project.bump(args.bump_type)
 
-    # print the diff
-    info(new_release)
+        # in some cases, e.g., single file python modules, the versioned file
+        # can't be predetermined and we must do a 2nd search over all files
+        for wave in [1, 2]:
+            project.set_versions(new_version, project.version, wave)
 
-    # todo: add optional step to add a separate [version]-dev..
-    # https://github.com/gregorynicholas/bump/issues/3
-    # setup the dev new version..
-    # dev_version = new_version + '-dev'
+            if project.bumped:
+                project.logger.info('Bumped from version %s to %s' % (
+                    project.version, new_version))
+                break
+        else:
+            error = "Couldn't find a version to bump."
+    elif args.version and not project.version_is_valid(args.version):
+        error = "Invalid version: '%s'. Please use x.y.z format." % (args.version)
+    elif args.version:
+        project.set_versions(args.version)
+        project.logger.info('Set to version %s' % args.version)
 
-    changelog_summary = new_release.format_changelog_summary()
+    if error:
+        exit(error)
 
-    # todo: add inline changelog summary editing..
-    # https://github.com/gregorynicholas/bump/issues/4
-    # present string to user to customize before continuing..
-    # if not config.skip_interactive:
-    #   readline.set_startup_hook(
-    #     lambda: readline.insert_text(changelog_summary))
-    #   changelog_summary = input(REVIEW_CHANGELOG_BANNER)
+    if project.bumped and not args.skip_commit:
+        message = args.commit_msg_format.format(version=new_version)
+        project.add(project.dirty_files)
+        project.commit(message)
 
-    # add the release changelog summary to the changelog file..
-    project.changelog.prepend(changelog_summary)
+    if project.stash_count:
+        project.unstash()
 
-    if not config.skip_interactive:
-        # todo: add ANSI/colorama and remove excess chars..
-        if not choice("""
-    ========================================================
-    review + edit changelog summary file: {}.
+    tag1 = project.bumped and project.version
+    tag2 = args.version and not project.version
+    tag = args.tag and (tag1 or tag2)
 
-    when satisfied, save the uncommitted file and enter a response below to
-    continue or not.
+    if tag:
+        version = (project.version or args.version)
+        message = args.tag_msg_format.format(version=version)
+        tag_text = args.tag_format.format(version=version)
+        project.tag(message, tag_text)
+    elif args.tag:
+        exit("Couldn't find a version to bump. Nothing to tag.")
 
+    if project.bumped and args.push:
+        project.push()
+    elif args.push:
+        exit("Couldn't find a version to bump. Nothing to push.")
 
-    continue with the release bump?""".format(project.changelog_file)):
-            fail("bump exiting..")
-            # todo: rollback flow here?
-            # checkout changed files..?
-
-    # todo: rollback flow here?
-
-    # optional step to set python __init__.py version..
-    if not config.skip_set_init_py_version:
-        set_init_py_version(new_version)
-
-    # optional step to set python setup.py version..
-    if not config.skip_set_setup_py_version:
-        set_setup_py_version(new_version)
-
-    if not config.skip_commit:
-        make_git_commit(config.changelog_file, new_release.tag_msg)
-
-    if not config.skip_tag:
-        make_git_tag(new_release.tag_msg, new_release.version_num)
-
-    if not config.skip_push:
-        push_to_remote()
-
-    info("""
-    ========================================================
-    release complete: {}.
-    """.format(new_release.tag_msg))
-
-    # optional pypi releases..
-
-    if not config.pypi_distribute:
-        setup_py_distribute()
-        info("version built + released and uploaded to python package index..")
-
-    project.releases.append(new_release)
     exit(0)
 
-
-parser = OptionParser(
-    description="description: bump makes following the semantic versioning "
- "specification a breeze. \n"
- "if called with no options, bump will print the current git repository's "
- "tag + version name",
-    prog="bump",
-    usage="%progs [options]")
-
-parser.add_option(
-    "--config", dest="config_file",
-    default=BumpConfig.DEFAULT_CONFIG_FILE,
-    help="path to a bump configuration file.")
-
-parser.add_option(
-    "--skip-interactive", dest="skip_interactive", action="store_true",
-    default=BumpConfig.DEFAULT_SKIP_INTERACTIVE,
-    help="skips interactive command line interface.")
-
-parser.add_option(
-    "--bump", dest="bump_type", choices=BUMP_TYPES,
-    help="""version bump type to increment. must be
-    one of:
-        major [x].x.x
-        minor x.[x].x
-        patch x.x.[x]""")
-
-parser.add_option(
-    "--skip-set-init-py", dest="skip_set_init_py_version", action="store_true",
-    default=BumpConfig.DEFAULT_SKIP_SET_INIT_PY_VERSION,
-    help="skips setting the new version string in the project root's __init__.py")
-
-parser.add_option(
-    "--skip-set-setup-py", dest="skip_set_setup_py_version", action="store_true",
-    default=BumpConfig.DEFAULT_SKIP_SET_SETUP_PY_VERSION,
-    help="skips setting the new version string in the setup.py")
-
-parser.add_option(
-    "--skip-commit", dest="skip_commit", action="store_true",
-    default=BumpConfig.DEFAULT_SKIP_COMMIT,
-    help="skips creating a git tag at the current HEAD")
-
-parser.add_option(
-    "--skip-tag", dest="skip_tag", action="store_true", default=BumpConfig.DEFAULT_SKIP_TAG,
-    help="skips creating a git tag at the current HEAD")
-
-parser.add_option(
-    "--skip-push", dest="skip_push", action="store_true",
-    default=BumpConfig.DEFAULT_SKIP_PUSH,
-    help="skips pushing to the remote origin")
-
-parser.add_option(
-    "--pypi-dist", dest="pypi_distribute", action="store_true",
-    default=BumpConfig.DEFAULT_PYPI_DISTRIBUTE,
-    help="build the release and upload to the python package index")
-
-# todo: implement message formats as cli options..
-# https://github.com/gregorynicholas/bump/issues/5
-
-parser.add_option(
-    "--changelog-file", dest="changelog_file", default=BumpConfig.DEFAULT_CHANGELOG_FILE,
-    help="path to the changelog history file.")
-
-parser.add_option(
-    "--changelog-fmt", dest="changelog_fmt", default=BumpConfig.DEFAULT_CHANGELOG_FMT,
-    help="string format of the changelog version summary")
-
-parser.add_option(
-    "--summaryitem-fmt", dest="summaryitem_fmt",
-    default=BumpConfig.DEFAULT_SUMMARY_ITEM_PREFIX,
-    help="string format of a changelog item summary")
-
-parser.add_option(
-    "--git-commit-fmt", dest="commit_msg_fmt", default=BumpConfig.DEFAULT_COMMIT_MSG_FMT,
-    help="string format of the git commit message")
-
-parser.add_option(
-    "--git-tag-fmt", dest="tag_msg_fmt", default=BumpConfig.DEFAULT_TAG_MSG_FMT,
-    help="string format of the git tag")
-
-parser.add_option(
-    "--datestr-fmt", dest="datestr_fmt", default=BumpConfig.DEFAULT_DATESTR_FMT,
-    help="string format for release dates")
-
-
 if __name__ == "__main__":
-    main(*parser.parse_args())
+    main()
