@@ -110,11 +110,11 @@ def main():
         # in some cases, e.g., single file python modules, the versioned file
         # can't be predetermined and we must do a 2nd search over all files
         for wave in [1, 2]:
-            project.set_versions(new_version, project.version, wave)
+            project.set_versions(new_version, wave)
 
             if project.bumped:
-                project.logger.info('bumped from version %s to %s' % (
-                    project.version, new_version))
+                msg = 'bumped from version %s to %s'
+                project.logger.info(msg, project.version, new_version)
                 break
         else:
             error = "Couldn't find a version to bump."

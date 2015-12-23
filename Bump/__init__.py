@@ -27,6 +27,7 @@ from __future__ import (
 
 import os
 import semver
+import pygogo as gogo
 
 from fnmatch import fnmatch
 from subprocess import CalledProcessError
@@ -47,6 +48,8 @@ __copyright__ = 'Copyright 2015 Reuben Cummings'
 DEFAULT_TAG_FMT = 'v{version}'
 DEFAULT_TAG_MSG_FMT = 'Version {version} Release'
 DEFAULT_COMMIT_MSG_FMT = 'bump to version {version}'
+
+logger = gogo.Gogo(__name__).logger
 
 
 class Project(Git):
@@ -85,8 +88,7 @@ class Project(Git):
     @property
     def current_version(self):
         """
-        :returns: string of the current git tag on the git index, not the
-        latest tag version created.
+        :returns: string of the current version parsed from most recent git tag
         """
         # what to do on first time run? no tags yet..
         if self.current_tag:
@@ -94,10 +96,18 @@ class Project(Git):
         else:
             version = None
 
-        if version and not self.version_is_valid(version):
+        if version and not version_is_valid(version):
             version = None
 
         return version
+
+    @property
+    def versions(self):
+        """
+        :returns: iterator of all valid versions parsed from the git tags
+        """
+        versions = (t.lstrip('v') for t in self.tags)
+        return (v for v in versions if version_is_valid(v))
 
     def gen_versioned_files(self, wave):
         if self.file:
@@ -113,9 +123,9 @@ class Project(Git):
                 if any(fnmatch(git_file, file) for file in switch[wave]):
                     yield git_file
 
-    def set_versions(self, new_version, version, wave=1):
+    def set_versions(self, new_version, wave=1):
         for file_ in self.gen_versioned_files(wave):
-            if not version:
+            if not self.version:
                 # get all lines in file
                 cmd = 'grep -ine "" %s' % file_
 
@@ -147,18 +157,11 @@ class Project(Git):
                 # replace current version with new version only if the line
                 # contains the word 'version'
                 cmd = ("sed -i '' '/version/s/%s/%s/g' %s"
-                    % (version, new_version, file_))
+                    % (self.version, new_version, file_))
 
             sh(cmd, path=self.dir) if cmd else None
 
         self.bumped = self.is_dirty
-
-    def version_is_valid(self, version):
-        try:
-            return semver.parse(version)
-        except ValueError as err:
-            self.logger.error(err.message)
-            return False
 
     def bump(self, bump_type):
         """
@@ -181,8 +184,16 @@ class Project(Git):
 
         new_version = switch.get(bump_type)(self.version)
 
-        if new_version in self.version:
+        if new_version in set(self.versions):
             self.logger.error('version `%s` already present', new_version)
-        else:
-            self.version = new_version
-            return self.version
+            new_version = None
+
+        return new_version
+
+
+def version_is_valid(version):
+    try:
+        return semver.parse(version)
+    except ValueError as err:
+        logger.error(err.message)
+        return False
