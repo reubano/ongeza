@@ -35,7 +35,7 @@ from subprocess import CalledProcessError
 from .git_utils import Git
 from .shell_utils import sh
 
-__version__ = '1.4.0'
+__version__ = '1.4.1'
 
 __title__ = 'bump'
 __author__ = 'Reuben Cummings'
@@ -124,6 +124,9 @@ class Project(Git):
                     yield git_file
 
     def set_versions(self, new_version, wave=1):
+        if not new_version:
+            return
+
         for file_ in self.gen_versioned_files(wave):
             if not self.version:
                 # get all lines in file
