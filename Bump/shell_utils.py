@@ -47,7 +47,7 @@ def sh(cmd, output=False, path=None):
         try:
             call(['cd', path])
         except OSError:
-            logger.error('No such file or directory: %s', path)
+            logger.error('No such directory: %s', path)
             go = False
 
     if output and go:
