@@ -8,32 +8,34 @@ from __future__ import (
     absolute_import, division, print_function, with_statement,
     unicode_literals)
 
-import os
 import bump
 
 from sys import exit
 from os import getcwd, path as p
 from argparse import RawTextHelpFormatter, ArgumentParser
 
-from . import Project, shell_utils as su
+from . import Project
 
 CURDIR = p.abspath(getcwd())
 
 parser = ArgumentParser(
-    description="description: bump makes following the Semantic Versioning"
+    description=(
+        "description: bump makes following the Semantic Versioning"
         " Specification a breeze.\nIf called with no options, bump will print "
         "the current git repository's tag version.\nIf <dir> is not specified,"
-        " the current dir is used.", prog='bump',
-        usage='%(prog)s [options] <dir>', formatter_class=RawTextHelpFormatter)
+        " the current dir is used."),
+    prog='bump', usage='%(prog)s [options] <dir>',
+    formatter_class=RawTextHelpFormatter)
 
 group = parser.add_mutually_exclusive_group()
 
 group.add_argument(
     '-t', '--type', dest='bump_type', action='store', choices=['m', 'n', 'p'],
-    help="version bump type, must be one of:\n"
+    help=(
+        "version bump type, must be one of:\n"
         "  m = major - [x].0.0\n"
         "  n = minor - x.[y].0\n"
-        "  p = patch - x.y.[z]")
+        "  p = patch - x.y.[z]"))
 
 group.add_argument(
     '-s', '--set', dest='version', action='store',
