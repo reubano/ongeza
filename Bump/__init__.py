@@ -124,6 +124,9 @@ class Project(Git):
                     yield git_file
 
     def set_versions(self, new_version, wave=1):
+        if not new_version:
+            return
+
         for file_ in self.gen_versioned_files(wave):
             if not self.version:
                 # get all lines in file
