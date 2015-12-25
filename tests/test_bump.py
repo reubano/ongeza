@@ -50,7 +50,7 @@ class TestGit:
 
     def test_git_tags(self):
         tags = self.git.tags
-        nt.assert_greater_equal(9, len(tags))
+        nt.assert_greater_equal(len(tags), 9)
         nt.assert_equal('v0.8.0', tags[0])
 
     # @patch('self.git.is_clean')
