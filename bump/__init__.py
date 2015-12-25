@@ -147,7 +147,7 @@ class Project(Git):
 
                     try:
                         rep_line = sh(cmd, True, path=self.dir)
-                    except Exception:
+                    except CalledProcessError:
                         cmd = None
                     else:
                         rep_line_num = rep_line.split(':')[0]

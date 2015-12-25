@@ -78,7 +78,6 @@ def main(script, tests, verbose=False, stop=True):
     logger.info('Ran %i scripttests in %0.3fs\n\n%s' % (num, time, end))
     sys.exit(failures)
 
-
 if __name__ == '__main__':
     parent_dir = p.abspath(p.dirname(p.dirname(__file__)))
     script = p.join(parent_dir, 'bin', 'bump')

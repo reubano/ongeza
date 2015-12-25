@@ -41,18 +41,18 @@ def sh(cmd, output=False, path=None):
 
         :returns: string of the captured output of the command.
     """
-    go = True
+    good = True
 
     if path:
         try:
             call(['cd', path])
         except OSError:
             logger.error('No such directory: %s', path)
-            go = False
+            good = False
 
-    if output and go:
+    if output and good:
         result = check_output(cmd, shell=True).strip()
-    elif go:
+    elif good:
         result = call(cmd, shell=True) is 0
     elif output:
         result = ''
