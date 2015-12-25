@@ -35,7 +35,7 @@ from subprocess import CalledProcessError
 from .git_utils import Git
 from .shell_utils import sh
 
-__version__ = '1.4.0'
+__version__ = '1.4.1'
 
 __title__ = 'bump'
 __author__ = 'Reuben Cummings'
