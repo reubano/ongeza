@@ -74,6 +74,7 @@ def require():
 @manager.arg('where', 'w', help='test path', default=None)
 @manager.arg(
     'stop', 'x', help='Stop after first error', type=bool, default=False)
+@manager.arg('tox', 't', help='Run tox tests')
 @manager.command
 def test(where=None, stop=False, tox=False):
     """Run nose, tox, and script tests"""
@@ -81,8 +82,11 @@ def test(where=None, stop=False, tox=False):
     opts += 'w %s' % where if where else ''
 
     try:
-        check_call(('nosetests %s' % opts).split(' '))
-        check_call(['python', p.join(BASEDIR, 'tests', 'test.py')])
+        if tox:
+            check_call('tox')
+        else:
+            check_call(('nosetests %s' % opts).split(' '))
+            check_call(['python', p.join(BASEDIR, 'tests', 'test.py')])
     except CalledProcessError as e:
         exit(e.returncode)
 

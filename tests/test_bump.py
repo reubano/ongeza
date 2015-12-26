@@ -14,6 +14,7 @@ import nose.tools as nt
 import pygogo as gogo
 
 from os import path as p
+from builtins import *
 from bump import __version__ as version
 from bump.git_utils import Git
 # from mock import patch
