@@ -1,4 +1,4 @@
-.PHONY: help clean check-stage pipme require list test tox register upload release sdist wheel
+.PHONY: help clean check-stage pipme require lint test tox register upload release sdist wheel
 
 help:
 	@echo "clean - remove Python file and build artifacts"
@@ -33,7 +33,7 @@ test:
 	nosetests -xv
 	python tests/test.py
 
-release: sdist wheel upload
+release: clean sdist wheel upload
 
 register:
 	python setup.py register
@@ -42,6 +42,7 @@ sdist:
 	helpers/srcdist
 
 wheel:
+	clean
 	helpers/wheel
 
 upload:

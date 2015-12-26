@@ -28,6 +28,9 @@ version = bump.__version__
 title = bump.__title__
 gh = 'https://github.com/reubano'
 
+if sys.version_info.major == 2:
+    requirements.append('future==0.15.2')
+
 setup(
     name=title,
     version=version,
