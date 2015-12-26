@@ -47,7 +47,7 @@ __copyright__ = 'Copyright 2015 Reuben Cummings'
 
 DEFAULT_TAG_FMT = 'v{version}'
 DEFAULT_TAG_MSG_FMT = 'Version {version} Release'
-DEFAULT_COMMIT_MSG_FMT = 'bump to version {version}'
+DEFAULT_COMMIT_MSG_FMT = 'Bump to version {version}'
 
 logger = gogo.Gogo(__name__).logger
 
