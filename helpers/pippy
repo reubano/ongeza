@@ -31,6 +31,10 @@ else
   cmd='pip install'
 fi
 
+if [ ${FLAGS_upgrade} -eq ${FLAGS_TRUE} ]; then
+  cmd="$cmd --upgrade"
+fi
+
 CFLAGS="-I /opt/local/include"
 LDFLAGS="-L /opt/local/lib"
 ARCHFLAGS="-arch x86_64"
