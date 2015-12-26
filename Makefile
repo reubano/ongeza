@@ -33,7 +33,7 @@ test:
 	nosetests -xv
 	python tests/test.py
 
-release: sdist wheel upload
+release: clean sdist wheel upload
 
 register:
 	python setup.py register
@@ -42,6 +42,7 @@ sdist:
 	helpers/srcdist
 
 wheel:
+	clean
 	helpers/wheel
 
 upload:
