@@ -35,7 +35,7 @@ from subprocess import CalledProcessError
 from .git_utils import Git
 from .shell_utils import sh
 
-__version__ = '1.4.1'
+__version__ = '1.4.2'
 
 __title__ = 'bump'
 __author__ = 'Reuben Cummings'
@@ -147,7 +147,7 @@ class Project(Git):
 
                     try:
                         rep_line = sh(cmd, True, path=self.dir)
-                    except Exception:
+                    except CalledProcessError:
                         cmd = None
                     else:
                         rep_line_num = rep_line.split(':')[0]
@@ -197,6 +197,6 @@ class Project(Git):
 def version_is_valid(version):
     try:
         return semver.parse(version)
-    except ValueError as err:
-        logger.error(err.message)
+    except (ValueError, TypeError):
+        logger.debug('%s is not a valid version', version)
         return False

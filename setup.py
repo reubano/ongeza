@@ -22,7 +22,6 @@ version = bump.__version__
 title = bump.__title__
 gh = 'https://github.com/reubano'
 
-
 setup(
     name=title,
     version=version,
