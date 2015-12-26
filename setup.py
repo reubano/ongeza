@@ -10,7 +10,7 @@ import sys
 from os import path as p
 from builtins import *
 
-import bump
+import bump as module
 import pkutils
 
 try:
@@ -20,12 +20,13 @@ except ImportError:
 
 sys.dont_write_bytecode = True
 requirements = list(pkutils.parse_requirements('requirements.txt'))
-dependencies = list(pkutils.parse_requirements('requirements.txt', dep=True))
 dev_requirements = list(pkutils.parse_requirements('dev-requirements.txt'))
+dependencies = list(pkutils.parse_requirements('requirements.txt', dep=True))
 readme = pkutils.read('README.rst')
-license = bump.__license__
-version = bump.__version__
-title = bump.__title__
+license = module.__license__
+version = module.__version__
+title = module.__title__
+description = module.__description__
 gh = 'https://github.com/reubano'
 
 if sys.version_info.major == 2:
@@ -34,33 +35,39 @@ if sys.version_info.major == 2:
 setup(
     name=title,
     version=version,
-    description=bump.__description__,
+    description=description,
     long_description=readme,
-    author=bump.__author__,
-    author_email=bump.__email__,
+    author=module.__author__,
+    author_email=module.__email__,
     url='%s/%s' % (gh, title),
     download_url='%s/%s/downloads/%s*.tgz' % (gh, title, title),
     packages=find_packages(exclude=['docs', 'tests']),
     include_package_data=True,
+    package_data={},
     install_requires=requirements,
     dependency_links=dependencies,
     test_suite='nose.collector',
     tests_require=dev_requirements,
     license=license,
     zip_safe=False,
-    keywords=[title],
+    keywords=[title] + description.split(' '),
     classifiers=[
         pkutils.LICENSES[license],
         'Development Status :: 4 - Beta',
+        'Natural Language :: English',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: Implementation :: PyPy',
         'Environment :: Console',
+        'Topic :: Software Development :: Libraries :: Python Modules',
+        'Topic :: Software Development :: Version Control',
         'Intended Audience :: Developers',
-        'License :: OSI Approved :: MIT License',
         'Operating System :: POSIX :: Linux',
         'Operating System :: MacOS :: MacOS X',
         'Operating System :: Microsoft :: Windows',
-        'Programming Language :: Python',
-        'Topic :: Software Development :: Libraries :: Python Modules'
-        'Topic :: Software Development :: Version Control',
     ],
     platforms=['MacOS X', 'Windows', 'Linux'],
     scripts=[p.join('bin', 'bump')]
