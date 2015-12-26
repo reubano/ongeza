@@ -13,8 +13,7 @@ import bump
 from sys import exit
 from os import getcwd, path as p
 from argparse import RawTextHelpFormatter, ArgumentParser
-
-from . import Project
+from . import Project, version_is_valid
 
 CURDIR = p.abspath(getcwd())
 
@@ -38,7 +37,7 @@ group.add_argument(
         "  p = patch - x.y.[z]"))
 
 group.add_argument(
-    '-s', '--set', dest='version', action='store',
+    '-s', '--set', dest='new_version', action='store',
     help='set arbitrary version number')
 
 parser.add_argument(
@@ -85,28 +84,40 @@ parser.add_argument(
 args = parser.parse_args()
 
 
-def run():
-    project = Project(args.dir, args.file, verbose=args.verbose)
+def prelim_check(project):
+    result = True
 
     if args.version:
-        project.logger.info('bump v%s' % bump.__version__)
-        exit(0)
+        project.logger.info('bump v%s', bump.__version__)
+    elif project.version and not args.bump_type and not args.new_version:
+        project.logger.info('Current version: {0.version}'.format(project))
+    elif not any([project.version, args.bump_type, args.new_version]):
+        project.logger.info('No valid versions found.')
+    else:
+        result = False
 
-    error = None
+    return result
 
-    if not project.version and args.bump_type:
-        error = "No git tags found, please run with '-s and -T' options"
-    elif (project.version and not args.bump_type and not args.version):
-        error = 'Current version: %s' % project.version
-    elif project.is_dirty and not args.stash:
+
+def bump_project(project):
+    if project.is_dirty and not args.stash:
         error = (
             "Can't bump the version with uncommitted changes. Please "
             "commit your changes or stash the following files and try "
             "again. Optionally, run with '-a' option to auto stash these "
             "files. Dirty files:\n%s" % "\n".join(project.dirty_files))
+        raise RuntimeError(error)
     elif project.is_dirty:
         project.logger.info("Stashing changes...\n")
         project.stash()
+
+    if args.new_version and version_is_valid(args.new_version):
+        new_version = args.new_version
+        project.set_versions(args.new_version)
+        project.logger.info('Set to version %s', args.new_version)
+    elif args.new_version:
+        msg = "Invalid version: '{0.version}'. Please use x.y.z format."
+        raise RuntimeError(msg.format(args))
     elif project.version and args.bump_type:
         new_version = project.bump(args.bump_type)
 
@@ -120,40 +131,55 @@ def run():
                 project.logger.info(msg, project.version, new_version)
                 break
         else:
-            error = "Couldn't find version '%s' in any files." % project.version
-    elif args.version and not project.version_is_valid(args.version):
-        error = "Invalid version: '%s'. Please use x.y.z format." % args.version
-    elif args.version:
-        project.set_versions(args.version)
-        project.logger.info('Set to version %s' % args.version)
+            msg = "Couldn't find version '{0.version}' in any files."
+            raise RuntimeError(msg.format(project))
+    else:
+        error = "No git tags found, please run with '-s and -T' options"
+        raise RuntimeError(error)
 
-    if error:
-        exit(error)
+    return new_version
 
+
+def cleanup(project, new_version):
     if project.bumped and not args.skip_commit:
         message = args.commit_msg_format.format(version=new_version)
         project.add(project.dirty_files)
         project.commit(message)
 
-    if project.stash_count:
+    if args.stash and project.stash_count:
         project.unstash()
 
-    tag1 = project.bumped and project.version
-    tag2 = args.version and not project.version
-    tag = args.tag and (tag1 or tag2)
-
-    if tag:
-        version = (project.version or args.version)
+    if project.bumped and args.tag:
+        version = (project.version or args.new_version)
         message = args.tag_msg_format.format(version=version)
         tag_text = args.tag_format.format(version=version)
         project.tag(message, tag_text)
     elif args.tag:
-        exit("Couldn't find a version to bump. Nothing to tag.")
+        raise RuntimeError("Couldn't find a version to bump. Nothing to tag.")
 
     if project.bumped and args.push:
         project.push()
     elif args.push:
-        exit("Couldn't find a version to bump. Nothing to push.")
+        raise RuntimeError("Couldn't find a version to bump. Nothing to push.")
+
+
+def run():
+    project = Project(args.dir, args.file, verbose=args.verbose)
+
+    if prelim_check(project):
+        exit(0)
+
+    try:
+        new_version = bump_project(project)
+    except RuntimeError as err:
+        project.logger.error(err)
+        exit(1)
+
+    try:
+        cleanup(project, new_version)
+    except RuntimeError as err:
+        project.logger.error(err)
+        exit(1)
 
     exit(0)
 

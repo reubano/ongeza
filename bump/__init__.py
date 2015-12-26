@@ -197,6 +197,6 @@ class Project(Git):
 def version_is_valid(version):
     try:
         return semver.parse(version)
-    except ValueError as err:
-        logger.error(err.message)
+    except (ValueError, TypeError):
+        logger.debug('%s is not a valid version', version)
         return False
