@@ -23,7 +23,7 @@ from __future__ import (
     absolute_import, division, print_function, with_statement,
     unicode_literals)
 
-from subprocess import call, check_output
+from subprocess import call, check_output, CalledProcessError
 from builtins import *
 
 import pygogo as gogo
@@ -52,7 +52,10 @@ def sh(cmd, output=False, path=None):
             good = False
 
     if output and good:
-        result = check_output(cmd, shell=True).strip().decode('utf-8')
+        try:
+            result = check_output(cmd, shell=True).strip().decode('utf-8')
+        except CalledProcessError:
+            result = ''
     elif good:
         result = call(cmd, shell=True) is 0
     elif output:
