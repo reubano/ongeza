@@ -11,6 +11,7 @@ from __future__ import (
 from os import path as p
 from subprocess import call, check_call, CalledProcessError
 
+from builtins import *
 from manager import Manager
 
 manager = Manager()
