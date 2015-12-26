@@ -33,7 +33,6 @@ from fnmatch import fnmatch
 from subprocess import CalledProcessError
 
 from .git_utils import Git
-from .shell_utils import sh
 
 __version__ = '1.4.2'
 
@@ -133,7 +132,7 @@ class Project(Git):
                 cmd = 'grep -ine "" %s' % file_
 
                 try:
-                    lines = sh(cmd, True, path=self.dir)
+                    lines = self.sh(cmd, True)
                 except CalledProcessError:
                     lines = None
 
@@ -146,7 +145,7 @@ class Project(Git):
                     cmd += ' | grep -m1 "[0-9]*\.[0-9]*\.[0-9]*"'
 
                     try:
-                        rep_line = sh(cmd, True, path=self.dir)
+                        rep_line = self.sh(cmd, True)
                     except CalledProcessError:
                         cmd = None
                     else:
@@ -162,7 +161,7 @@ class Project(Git):
                 cmd = ("sed -i '' '/version/s/%s/%s/g' %s"
                     % (self.version, new_version, file_))
 
-            sh(cmd, path=self.dir) if cmd else None
+            self.sh(cmd) if cmd else None
 
         self.bumped = self.is_dirty
 
