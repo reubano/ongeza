@@ -20,8 +20,8 @@ except ImportError:
 
 sys.dont_write_bytecode = True
 requirements = list(pkutils.parse_requirements('requirements.txt'))
-dependencies = list(pkutils.parse_requirements('requirements.txt', dep=True))
 dev_requirements = list(pkutils.parse_requirements('dev-requirements.txt'))
+dependencies = list(pkutils.parse_requirements('requirements.txt', dep=True))
 readme = pkutils.read('README.rst')
 license = module.__license__
 version = module.__version__
@@ -43,6 +43,7 @@ setup(
     download_url='%s/%s/downloads/%s*.tgz' % (gh, title, title),
     packages=find_packages(exclude=['docs', 'tests']),
     include_package_data=True,
+    package_data={},
     install_requires=requirements,
     dependency_links=dependencies,
     test_suite='nose.collector',
@@ -53,11 +54,6 @@ setup(
     classifiers=[
         pkutils.LICENSES[license],
         'Development Status :: 4 - Beta',
-        'Environment :: Console',
-        'Intended Audience :: Developers',
-        'Operating System :: POSIX :: Linux',
-        'Operating System :: MacOS :: MacOS X',
-        'Operating System :: Microsoft :: Windows',
         'Natural Language :: English',
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
@@ -65,8 +61,13 @@ setup(
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: Implementation :: PyPy',
+        'Environment :: Console',
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Topic :: Software Development :: Version Control',
+        'Intended Audience :: Developers',
+        'Operating System :: POSIX :: Linux',
+        'Operating System :: MacOS :: MacOS X',
+        'Operating System :: Microsoft :: Windows',
     ],
     platforms=['MacOS X', 'Windows', 'Linux'],
     scripts=[p.join('bin', 'bump')]
