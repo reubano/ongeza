@@ -1,3 +1,3 @@
 semver==2.2.1
-pkutils==0.6.1
-pygogo==0.7.0
+pkutils==0.7.1
+pygogo==0.8.0

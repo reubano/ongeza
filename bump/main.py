@@ -13,6 +13,8 @@ import bump
 from sys import exit
 from os import getcwd, path as p
 from argparse import RawTextHelpFormatter, ArgumentParser
+
+from builtins import *
 from . import Project, version_is_valid
 
 CURDIR = p.abspath(getcwd())

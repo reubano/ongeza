@@ -31,11 +31,11 @@ import pygogo as gogo
 
 from fnmatch import fnmatch
 from subprocess import CalledProcessError
+from builtins import *
 
 from .git_utils import Git
-from .shell_utils import sh
 
-__version__ = '1.4.2'
+__version__ = '1.5.0'
 
 __title__ = 'bump'
 __author__ = 'Reuben Cummings'
@@ -107,7 +107,7 @@ class Project(Git):
         :returns: iterator of all valid versions parsed from the git tags
         """
         versions = (t.lstrip('v') for t in self.tags)
-        return (v for v in versions if version_is_valid(v))
+        return filter(version_is_valid, versions)
 
     def gen_versioned_files(self, wave):
         if self.file:
@@ -133,7 +133,7 @@ class Project(Git):
                 cmd = 'grep -ine "" %s' % file_
 
                 try:
-                    lines = sh(cmd, True, path=self.dir)
+                    lines = self.sh(cmd, True)
                 except CalledProcessError:
                     lines = None
 
@@ -146,7 +146,7 @@ class Project(Git):
                     cmd += ' | grep -m1 "[0-9]*\.[0-9]*\.[0-9]*"'
 
                     try:
-                        rep_line = sh(cmd, True, path=self.dir)
+                        rep_line = self.sh(cmd, True)
                     except CalledProcessError:
                         cmd = None
                     else:
@@ -162,7 +162,7 @@ class Project(Git):
                 cmd = ("sed -i '' '/version/s/%s/%s/g' %s"
                     % (self.version, new_version, file_))
 
-            sh(cmd, path=self.dir) if cmd else None
+            self.sh(cmd) if cmd else None
 
         self.bumped = self.is_dirty
 

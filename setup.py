@@ -1,11 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from __future__ import (
+    absolute_import, division, print_function, with_statement,
+    unicode_literals)
+
 import sys
-import bump
-import pkutils
 
 from os import path as p
+from builtins import *
+
+import bump
+import pkutils
 
 try:
     from setuptools import setup, find_packages

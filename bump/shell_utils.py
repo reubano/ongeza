@@ -12,8 +12,8 @@ Examples:
 
         >>> sh('echo hello world')
         True
-        >>> sh('echo hello world', True)
-        'hello world'
+        >>> sh('echo hello world', True) == 'hello world'
+        True
 
 Attributes:
     ENCODING (str): The module encoding
@@ -23,9 +23,10 @@ from __future__ import (
     absolute_import, division, print_function, with_statement,
     unicode_literals)
 
-import pygogo as gogo
-
 from subprocess import call, check_output
+from builtins import *
+
+import pygogo as gogo
 
 logger = gogo.Gogo(__name__).logger
 
@@ -51,7 +52,7 @@ def sh(cmd, output=False, path=None):
             good = False
 
     if output and good:
-        result = check_output(cmd, shell=True).strip()
+        result = check_output(cmd, shell=True).strip().decode('utf-8')
     elif good:
         result = call(cmd, shell=True) is 0
     elif output:
