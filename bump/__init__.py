@@ -35,7 +35,7 @@ from builtins import *
 
 from .git_utils import Git
 
-__version__ = '1.7.1'
+__version__ = '1.7.2'
 
 __title__ = 'bump'
 __author__ = 'Reuben Cummings'
@@ -47,7 +47,7 @@ __copyright__ = 'Copyright 2015 Reuben Cummings'
 
 DEFAULT_TAG_FMT = 'v{version}'
 DEFAULT_TAG_MSG_FMT = 'Version {version} Release'
-DEFAULT_COMMIT_MSG_FMT = 'bump to version {version}'
+DEFAULT_COMMIT_MSG_FMT = 'Bump to version {version}'
 
 logger = gogo.Gogo(__name__).logger
 
