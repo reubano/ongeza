@@ -107,7 +107,7 @@ class Project(Git):
         :returns: iterator of all valid versions parsed from the git tags
         """
         versions = (t.lstrip('v') for t in self.tags)
-        return (v for v in versions if version_is_valid(v))
+        return filter(version_is_valid, versions)
 
     def gen_versioned_files(self, wave):
         if self.file:
