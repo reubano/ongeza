@@ -218,7 +218,6 @@ fi
 WHEEL_CNT=$(ls $FLAGS_cache/*.whl 2> /dev/null | wc -l)
 
 if [ $WHEEL_CNT -gt 0 ]; then
-  echo yes!!!
   for WHEEL in `ls $FLAGS_cache/*.whl`; do
     mv "$WHEEL" "$FLAGS_wheel/"
   done
