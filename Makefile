@@ -51,6 +51,3 @@ upload:
 
 tox:
 	tox
-
-docs:
-	helpers/docs
