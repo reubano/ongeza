@@ -49,7 +49,7 @@ _download () {
 
   echo "Downloading $package..."
 
-  if [ $flags ]; then
+  if $flags; then
     CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" ARCHFLAGS="$ARCHFLAGS" \
       $cmd --download=$FLAGS_cache $package
   else
@@ -77,10 +77,10 @@ __install () {
     option=false
   fi
 
-  if [ $flags ] ; then
+  if $flags; then
     CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" ARCHFLAGS="$ARCHFLAGS" \
       $cmd --use-wheel --no-index --find-links="$link" $package
-  elif [ $option ] ; then
+  elif $option; then
     $cmd --use-wheel --no-index --find-links="$link" \
       --install-option="$option" $package
   else
@@ -96,10 +96,10 @@ __install () {
 
     link=$FLAGS_cache
 
-    if [ $flags ] ; then
+    if $flags; then
       CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" ARCHFLAGS="$ARCHFLAGS" \
         $cmd --use-wheel --no-index --find-links="$link" $package
-    elif [ $option ] ; then
+    elif $option; then
       $cmd --use-wheel --no-index --find-links="$link" \
         --install-option="$option" $package
     else
@@ -127,11 +127,11 @@ _make_wheel () {
     option=false
   fi
 
-  if [ $flags ] ; then
+  if $flags; then
     CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" ARCHFLAGS="$ARCHFLAGS" \
       pip wheel --wheel-dir=$FLAGS_wheel --no-index --find-links=$FLAGS_cache \
       $package
-  elif [ $option ] ; then
+  elif $option; then
     pip wheel --wheel-dir=$FLAGS_wheel --no-index --find-links=$FLAGS_cache \
       --build-option="$option" $package
   else
@@ -163,7 +163,7 @@ _install () {
 
   __install $package
 
-  if [ $success ]; then
+  if [ $success == true ]; then
     if [ ${FLAGS_save} -eq ${FLAGS_TRUE} ]; then
       _make_wheel $package
     fi
@@ -173,13 +173,13 @@ _install () {
     _download $package
   fi
 
-  if [ ! $success ]; then
+  if [ $success == false ]; then
     continue
   fi
 
   _make_wheel $package
 
-  if [ ! $success ]; then
+  if [ $success == false ]; then
     continue
   fi
 
@@ -215,11 +215,11 @@ if [ "$packages" != '' ]; then
 fi
 
 # move any orphan wheel files (e.g., when dependencies were installed)
-ISWHEEL=$(ls $FLAGS_cache/*.whl 2> /dev/null | wc -l)
+WHEEL_CNT=$(ls $FLAGS_cache/*.whl 2> /dev/null | wc -l)
 
-if [ $ISWHEEL -gt 0 ]; then
-  for FILE in `$FLAGS_cache/*.whl`; do
-    echo "moving $FILE to $FLAGS_wheel"
-    mv "$FILE" "$FLAGS_wheel/"
+if [ $WHEEL_CNT -gt 0 ]; then
+  echo yes!!!
+  for WHEEL in `ls $FLAGS_cache/*.whl`; do
+    mv "$WHEEL" "$FLAGS_wheel/"
   done
 fi
