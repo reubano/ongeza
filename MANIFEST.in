@@ -1,5 +1,5 @@
 recursive-include tests *
-include README.md
+include README.rst
 include CHANGES.md
 include LICENSE
 include *requirements.txt
