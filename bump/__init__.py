@@ -35,12 +35,11 @@ from builtins import *
 
 from .git_utils import Git
 
-__version__ = '1.7.4'
+__version__ = '1.7.5'
 
 __title__ = 'bump'
 __author__ = 'Reuben Cummings'
-__description__ = 'An automated way to follow the Semantic Versioning'
-__description__ += 'Specification'
+__description__ = 'Your Semantic Versioning personal assistant'
 __email__ = 'reubano@gmail.com'
 __license__ = 'MIT'
 __copyright__ = 'Copyright 2015 Reuben Cummings'

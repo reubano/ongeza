@@ -15,6 +15,8 @@ from __future__ import (
 
 import sys
 import pygogo as gogo
+
+sys.path.append('../bump')
 import bump
 
 from difflib import unified_diff
