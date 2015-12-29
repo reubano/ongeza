@@ -11,6 +11,7 @@ DEFINE_string 'requirements' '' 'the requirements file to install' 'r'
 DEFINE_boolean 'upgrade' 'false' 'install requirement even if already satisfied' 'u'
 DEFINE_boolean 'save' 'false' 'save wheel to cache' 's'
 DEFINE_boolean 'sudo' 'false' 'install with sudo privileges' 'H'
+DEFINE_boolean 'py3' 'false' 'install with python3' 'p'
 DEFINE_string 'package' '' 'the pip package(s)' '' true
 
 # parse the command-line
@@ -25,14 +26,22 @@ else
   packages=$@
 fi
 
-if [ ${FLAGS_sudo} -eq ${FLAGS_TRUE} ]; then
-  cmd='sudo -H pip install'
+if [ ${FLAGS_py3} -eq ${FLAGS_TRUE} ]; then
+  pip='python3 -m pip'
 else
-  cmd='pip install'
+  pip='pip'
+fi
+
+if [ ${FLAGS_sudo} -eq ${FLAGS_TRUE} ]; then
+  install="sudo -H $pip install"
+else
+  install="$pip install"
 fi
 
 if [ ${FLAGS_upgrade} -eq ${FLAGS_TRUE} ]; then
-  cmd="$cmd --upgrade"
+  cmd="$install --upgrade"
+else
+  cmd="$install"
 fi
 
 CFLAGS="-I /opt/local/include"
