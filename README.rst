@@ -7,7 +7,7 @@ Introduction
 
 bump is a Python command line application_ (CLI) that makes following the
 `Semantic Versioning Specification`_ a breeze. If called with no options, bump
-will print the repo's current git tag version. With pkutils, you can
+will print the repo's current git tag version. With bump, you can
 
 - Quickly bump to a ``patch``, ``minor``, or ``major`` version
 - Stash uncommitted changes before bumping
@@ -48,7 +48,7 @@ automagically:
 Usage
 -----
 
-pkutils is intended to be used from the command line.
+bump is intended to be used from the command line.
 
 .. code-block:: bash
 
@@ -148,17 +148,17 @@ Installation
 
 (You are using a `virtualenv`_, right?)
 
-At the command line, install pkutils using either ``pip`` (*recommended*)
+At the command line, install bump using either ``pip`` (*recommended*)
 
 .. code-block:: bash
 
-    pip install pkutils
+    pip install bump
 
 or ``easy_install``
 
 .. code-block:: bash
 
-    easy_install pkutils
+    easy_install bump
 
 Please see the `installation doc`_ for more details.
 
@@ -245,7 +245,7 @@ bump is distributed under the `MIT License`_.
 .. _MIT License: http://opensource.org/licenses/MIT
 .. _Python versions: http://www.python.org/download
 .. _virtualenv: http://www.virtualenv.org/en/latest/index.html
-.. _contributing doc: https://github.com/reubano/pkutils/blob/master/CONTRIBUTING.rst
+.. _contributing doc: https://github.com/reubano/bump/blob/master/CONTRIBUTING.rst
 
 Contributing
 ------------
@@ -256,18 +256,18 @@ examples. Also, make sure the python linter and nose tests pass.
 
 Please see the `contributing doc`_ for more details.
 
-.. |travis| image:: https://img.shields.io/travis/reubano/pkutils.svg
-    :target: https://travis-ci.org/reubano/pkutils
+.. |travis| image:: https://img.shields.io/travis/reubano/bump/master.svg
+    :target: https://travis-ci.org/reubano/bump
 
-.. |versions| image:: https://img.shields.io/pypi/pyversions/pkutils.svg
-    :target: https://pypi.python.org/pypi/pkutils
+.. |versions| image:: https://img.shields.io/pypi/pyversions/bump.svg
+    :target: https://pypi.python.org/pypi/bump
 
-.. |pypi| image:: https://img.shields.io/pypi/v/pkutils.svg
-    :target: https://pypi.python.org/pypi/pkutils
+.. |pypi| image:: https://img.shields.io/pypi/v/bump.svg
+    :target: https://pypi.python.org/pypi/bump
 
 .. _MIT License: http://opensource.org/licenses/MIT
 .. _Semantic Versioning Specification: http://semver.org/
 .. _virtualenv: http://www.virtualenv.org/en/latest/index.html
 .. _Python versions: http://www.python.org/download
-.. _contributing doc: https://github.com/reubano/pkutils/blob/master/CONTRIBUTING.rst
-.. _installation doc: https://github.com/reubano/pkutils/blob/master/INSTALLATION.rst
+.. _contributing doc: https://github.com/reubano/bump/blob/master/CONTRIBUTING.rst
+.. _installation doc: https://github.com/reubano/bump/blob/master/INSTALLATION.rst
