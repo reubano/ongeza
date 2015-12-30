@@ -237,16 +237,6 @@ Examples
     manage lint
     manage test
 
-License
--------
-
-bump is distributed under the `MIT License`_.
-
-.. _MIT License: http://opensource.org/licenses/MIT
-.. _Python versions: http://www.python.org/download
-.. _virtualenv: http://www.virtualenv.org/en/latest/index.html
-.. _contributing doc: https://github.com/reubano/bump/blob/master/CONTRIBUTING.rst
-
 Contributing
 ------------
 
@@ -255,6 +245,11 @@ If you add new classes or functions, please add the appropriate doc blocks with
 examples. Also, make sure the python linter and nose tests pass.
 
 Please see the `contributing doc`_ for more details.
+
+License
+-------
+
+bump is distributed under the `MIT License`_.
 
 .. |travis| image:: https://img.shields.io/travis/reubano/bump/master.svg
     :target: https://travis-ci.org/reubano/bump
