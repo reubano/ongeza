@@ -19,18 +19,26 @@ except ImportError:
     from distutils.core import setup, find_packages
 
 sys.dont_write_bytecode = True
-requirements = list(pkutils.parse_requirements('requirements.txt'))
-dev_requirements = list(pkutils.parse_requirements('dev-requirements.txt'))
-dependencies = list(pkutils.parse_requirements('requirements.txt', dep=True))
+py2_requirements = sorted(pkutils.parse_requirements('py2-requirements.txt'))
+py3_requirements = sorted(pkutils.parse_requirements('requirements.txt'))
+dev_requirements = sorted(pkutils.parse_requirements('dev-requirements.txt'))
+dependencies = sorted(pkutils.parse_requirements('requirements.txt', dep=True))
 readme = pkutils.read('README.rst')
+changes = pkutils.read('CHANGES.rst').replace('.. :changelog:', '')
 license = module.__license__
 version = module.__version__
 project = module.__title__
 description = module.__description__
 user = 'reubano'
 
-if sys.version_info.major == 2:
-    requirements.append('future==0.15.2')
+# Conditional sdist dependencies:
+if 'bdist_wheel' not in sys.argv and sys.version_info.major == 2:
+    requirements = py2_requirements
+else:
+    requirements = py3_requirements
+
+# Conditional bdist_wheel dependencies:
+extras_require = sorted(set(py2_requirements).difference(py3_requirements))
 
 setup(
     name=project,
@@ -45,6 +53,7 @@ setup(
     include_package_data=True,
     package_data={},
     install_requires=requirements,
+    extras_require={':python_version<"3.0"': extras_require},
     dependency_links=dependencies,
     test_suite='nose.collector',
     tests_require=dev_requirements,
