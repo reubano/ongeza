@@ -123,7 +123,6 @@ class Git(object):
         """
         pushes current branch and tags to remote.
         """
-        # don't call --all here on purpose..
         return self.sh("git push && git push --tags")
 
     def stash(self):
