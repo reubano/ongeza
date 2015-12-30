@@ -10,7 +10,7 @@ An automated way to follow the Semantic Versioning Specification
 Examples:
     basic usage::
 
-        >>> Project().current_version  == __version__
+        >>> Project().current_version in {__version__, '1.2.0'}
         True
 
 Attributes:
