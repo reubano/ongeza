@@ -10,9 +10,7 @@ helpers for working with git.
 Examples:
     basic usage::
 
-        >>> from os import path as p
-        >>> git = Git(p.abspath(p.dirname(p.dirname(__file__))))
-        >>> git.tags  # doctest: +ELLIPSIS
+        >>> Git().tags  # doctest: +ELLIPSIS
         [u'v0.8.0', u'v0.8.1', ...]
 """
 
@@ -33,7 +31,7 @@ class Git(object):
     """
     class representing Git commands.
     """
-    def __init__(self, dir_, verbose=False):
+    def __init__(self, dir_=None, verbose=False):
         """
         Parameters
         ----------

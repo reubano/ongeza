@@ -13,13 +13,10 @@ from __future__ import (
 import nose.tools as nt
 import pygogo as gogo
 
-from os import path as p
 from builtins import *
 from bump import __version__ as version
 from bump.git_utils import Git
 # from mock import patch
-
-PARENT_DIR = p.abspath(p.dirname(p.dirname(__file__)))
 
 module_logger = gogo.Gogo(__name__).logger
 
@@ -38,7 +35,7 @@ class TestGit:
     def setUp(self):
         nt.assert_false(self.cls_initialized)
         self.cls_initialized = True
-        self.git = Git(PARENT_DIR)
+        self.git = Git()
         module_logger.debug('TestMain class setup\n')
 
     def tearDown(self):

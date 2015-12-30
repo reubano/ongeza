@@ -10,9 +10,7 @@ An automated way to follow the Semantic Versioning Specification
 Examples:
     basic usage::
 
-        >>> from os import path as p
-        >>> project = Project(p.abspath(p.dirname(p.dirname(__file__))))
-        >>> project.current_version  == __version__
+        >>> Project().current_version  == __version__
         True
 
 Attributes:
@@ -56,7 +54,7 @@ class Project(Git):
     class representing a project object.
     """
 
-    def __init__(self, dir_, file_=None, version=None, verbose=False):
+    def __init__(self, dir_=None, file_=None, version=None, verbose=False):
         """
         Parameters
         ----------
@@ -68,10 +66,10 @@ class Project(Git):
 
         Examples
         --------
-        >>> Project(os.curdir)  # doctest: +ELLIPSIS
+        >>> Project()  # doctest: +ELLIPSIS
         <bump.Project object at 0x...>
         """
-        if not os.path.isdir(dir_):
+        if dir_ and not os.path.isdir(dir_):
             raise Exception('%s is not a directory' % dir_)
 
         super(Project, self).__init__(dir_, verbose)
