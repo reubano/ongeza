@@ -23,7 +23,6 @@ from __future__ import (
     absolute_import, division, print_function, with_statement,
     unicode_literals)
 
-import os
 import semver
 import pygogo as gogo
 
@@ -69,11 +68,7 @@ class Project(Git):
         >>> Project()  # doctest: +ELLIPSIS
         <bump.Project object at 0x...>
         """
-        if dir_ and not os.path.isdir(dir_):
-            raise Exception('%s is not a directory' % dir_)
-
         super(Project, self).__init__(dir_, verbose)
-
         self.bumped = False
         self.file = file_
 
