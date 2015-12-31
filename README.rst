@@ -12,7 +12,7 @@ Index
 `Introduction`_ | `Requirements`_ | `Motivation`_ | `Usage`_ | `Installation`_ |
 `Project Structure`_
 
-`Design Principles`_ | `Scripts`_ | `Contributing`_ | `License`_
+`Design Principles`_ | `Limitations`_ | `Scripts`_ | `Contributing`_ | `License`_
 
 Introduction
 ------------
@@ -102,6 +102,7 @@ Basic Examples
 	                        git tag message format
 	  -c COMMIT_MSG_FORMAT, --commit-msg-format COMMIT_MSG_FORMAT
 	                        git commit message format
+      -g, --sign            make a GPG-signed tag
 	  -i FILE, --file FILE  the versioned file
 	  -v, --version         Show version and exit.
 	  -V, --verbose         increase output verbosity
@@ -138,6 +139,12 @@ Basic Examples
 
 Advanced Examples
 ~~~~~~~~~~~~~~~~~
+
+*bump to a `major` version and add a GPG signed git tag*
+
+.. code-block:: bash
+
+    ongeza -gT --type=m
 
 *bump `weird.file` to a `minor` version and use custom formats*
 
