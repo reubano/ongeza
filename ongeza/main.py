@@ -8,7 +8,7 @@ from __future__ import (
     absolute_import, division, print_function, with_statement,
     unicode_literals)
 
-import bump
+import ongeza
 
 from sys import exit
 from os import getcwd, getenv, path as p
@@ -21,19 +21,19 @@ CURDIR = None if getenv('TRAVIS') else p.abspath(getcwd())
 
 parser = ArgumentParser(
     description=(
-        "description: bump makes following the Semantic Versioning"
-        " Specification a breeze.\nIf called with no options, bump will print "
-        "the current git repository's tag version.\nIf <dir> is not specified,"
-        " the current dir is used."),
-    prog='bump', usage='%(prog)s [options] <dir>',
+        "description: ongeza makes following the Semantic Versioning "
+        "Specification a breeze.\nIf called with no options, ongeza will "
+        "print the current git repository's tag version.\nIf <dir> is not "
+        "specified, the current dir is used."),
+    prog='ongeza', usage='%(prog)s [options] <dir>',
     formatter_class=RawTextHelpFormatter)
 
 group = parser.add_mutually_exclusive_group()
 
 group.add_argument(
-    '-t', '--type', dest='bump_type', action='store', choices=['m', 'n', 'p'],
+    '-t', '--type', dest='ongeza_type', action='store', choices=['m', 'n', 'p'],
     help=(
-        "version bump type, must be one of:\n"
+        "version ongeza type, must be one of:\n"
         "  m = major - [x].0.0\n"
         "  n = minor - x.[y].0\n"
         "  p = patch - x.y.[z]"))
@@ -48,11 +48,11 @@ parser.add_argument(
 
 parser.add_argument(
     '-S', '--skip-commit', action='store_true', help='skip committing version'
-    ' bumped files')
+    ' ongezaed files')
 
 parser.add_argument(
     '-T', '--tag', action='store_true', help='create git tag at HEAD with the'
-    ' bumped version number')
+    ' ongezaed version number')
 
 parser.add_argument(
     '-p', '--push', action='store_true', help='push to the remote origin')
@@ -61,16 +61,16 @@ parser.add_argument(
     '-a', '--stash', action='store_true', help='stash uncommitted changes')
 
 parser.add_argument(
-    '-f', '--tag-format', action='store', default=bump.DEFAULT_TAG_FMT,
+    '-f', '--tag-format', action='store', default=ongeza.DEFAULT_TAG_FMT,
     help='git tag format')
 
 parser.add_argument(
-    '-F', '--tag-msg-format', action='store', default=bump.DEFAULT_TAG_MSG_FMT,
-    help='git tag message format')
+    '-F', '--tag-msg-format', action='store',
+    default=ongeza.DEFAULT_TAG_MSG_FMT, help='git tag message format')
 
 parser.add_argument(
     '-c', '--commit-msg-format', action='store',
-    default=bump.DEFAULT_COMMIT_MSG_FMT, help='git commit message format')
+    default=ongeza.DEFAULT_COMMIT_MSG_FMT, help='git commit message format')
 
 parser.add_argument(
     '-i', '--file', action='store', help='the versioned file')
@@ -90,10 +90,10 @@ def prelim_check(project):
     result = True
 
     if args.version:
-        project.logger.info('bump v%s', bump.__version__)
-    elif project.version and not args.bump_type and not args.new_version:
+        project.logger.info('ongeza v%s', ongeza.__version__)
+    elif project.version and not args.ongeza_type and not args.new_version:
         project.logger.info('Current version: {0.version}'.format(project))
-    elif not any([project.version, args.bump_type, args.new_version]):
+    elif not any([project.version, args.ongeza_type, args.new_version]):
         project.logger.info('No valid versions found.')
     else:
         result = False
@@ -101,10 +101,10 @@ def prelim_check(project):
     return result
 
 
-def bump_project(project):
+def ongeza_project(project):
     if project.is_dirty and not args.stash:
         error = (
-            "Can't bump the version with uncommitted changes. Please "
+            "Can't ongeza the version with uncommitted changes. Please "
             "commit your changes or stash the following files and try "
             "again. Optionally, run with '-a' option to auto stash these "
             "files. Dirty files:\n%s" % "\n".join(project.dirty_files))
@@ -120,16 +120,16 @@ def bump_project(project):
     elif args.new_version:
         msg = "Invalid version: '{0.version}'. Please use x.y.z format."
         raise RuntimeError(msg.format(args))
-    elif project.version and args.bump_type:
-        new_version = project.bump(args.bump_type)
+    elif project.version and args.ongeza_type:
+        new_version = project.ongeza(args.ongeza_type)
 
         # in some cases, e.g., single file python modules, the versioned file
         # can't be predetermined and we must do a 2nd search over all files
         for wave in [1, 2]:
             project.set_versions(new_version, wave)
 
-            if project.bumped:
-                msg = 'bumped from version %s to %s'
+            if project.ongezaed:
+                msg = 'ongezaed from version %s to %s'
                 project.logger.info(msg, project.version, new_version)
                 break
         else:
@@ -143,7 +143,8 @@ def bump_project(project):
 
 
 def cleanup(project, new_version):
-    if project.bumped and not args.skip_commit:
+    msg = "Couldn't find a version to ongeza."
+    if project.ongezaed and not args.skip_commit:
         message = args.commit_msg_format.format(version=new_version)
         project.add(project.dirty_files)
         project.commit(message)
@@ -151,18 +152,18 @@ def cleanup(project, new_version):
     if args.stash and project.stash_count:
         project.unstash()
 
-    if project.bumped and args.tag:
+    if project.ongezaed and args.tag:
         version = (project.version or args.new_version)
         message = args.tag_msg_format.format(version=version)
         tag_text = args.tag_format.format(version=version)
         project.tag(message, tag_text)
     elif args.tag:
-        raise RuntimeError("Couldn't find a version to bump. Nothing to tag.")
+        raise RuntimeError("%s Nothing to tag." % msg)
 
-    if project.bumped and args.push:
+    if project.ongezaed and args.push:
         project.push()
     elif args.push:
-        raise RuntimeError("Couldn't find a version to bump. Nothing to push.")
+        raise RuntimeError("%s Nothing to push." % msg)
 
 
 def run():
@@ -172,7 +173,7 @@ def run():
         exit(0)
 
     try:
-        new_version = bump_project(project)
+        new_version = ongeza_project(project)
     except RuntimeError as err:
         project.logger.error(err)
         exit(1)

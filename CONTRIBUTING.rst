@@ -17,7 +17,7 @@ Types of Contributions
 Report Bugs
 ~~~~~~~~~~~
 
-Report bugs at https://github.com/reubano/bump/issues.
+Report bugs at https://github.com/reubano/ongeza/issues.
 
 If you are reporting a bug, please include:
 
@@ -38,14 +38,14 @@ Look through the GitHub `issues`_ for anything tagged with ``feature`` and hack 
 Write Documentation
 ~~~~~~~~~~~~~~~~~~~
 
-bump could always use more documentation, whether as part of the
+ongeza could always use more documentation, whether as part of the
 official docs, in docstrings, or even on the web in blog posts, articles, and such.
 Feel free to contribute any type of documentation.
 
 Submit Feedback
 ~~~~~~~~~~~~~~~
 
-The best way to send feedback is to file an issue at https://github.com/reubano/bump/issues.
+The best way to send feedback is to file an issue at https://github.com/reubano/ongeza/issues.
 
 If you are proposing a feature:
 
@@ -57,20 +57,20 @@ If you are proposing a feature:
 Get Started!
 ------------
 
-Ready to contribute? Here's how to set up ``bump`` for local development.
+Ready to contribute? Here's how to set up ``ongeza`` for local development.
 
-1. Fork the ``bump`` repo on GitHub and clone
+1. Fork the ``ongeza`` repo on GitHub and clone
 
 .. code-block:: bash
 
-    git clone git@github.com:<your_username>/bump.git
-    cd bump
+    git clone git@github.com:<your_username>/ongeza.git
+    cd ongeza
 
 2. Setup a new `virtualenv`_ with ``virtualenvwrapper``
 
 .. code-block:: bash
 
-    mkvirtualenv --no-site-packages bump
+    mkvirtualenv --no-site-packages ongeza
     pip install -r dev-requirements.txt
     python setup.py develop
 
@@ -78,8 +78,8 @@ Or, if you only have ``virtualenv`` installed
 
 .. code-block:: bash
 
-    virtualenv --no-site-packages ~/.venvs/bump
-    source ~/.venvs/bump/bin/activate
+    virtualenv --no-site-packages ~/.venvs/ongeza
+    source ~/.venvs/ongeza/bin/activate
     pip install -r dev-requirements.txt
     python setup.py develop
 
@@ -104,7 +104,7 @@ Or, if you only have ``virtualenv`` installed
     git commit -m "Your detailed description of your changes."
     git push origin name-of-your-bugfix-or-feature
 
-6. Submit a pull request on the bump `repo`_.
+6. Submit a pull request on the ongeza `repo`_.
 
 Pull Request Guidelines
 -----------------------
@@ -116,6 +116,6 @@ Before you submit a pull request, check that it meets these guidelines:
    your new functionality into a function with a docstring, and add the
    feature to the list in README.rst.
 
-.. _issues: https://github.com/reubano/bump/issues
-.. _repo: https://github.com/reubano/bump
+.. _issues: https://github.com/reubano/ongeza/issues
+.. _repo: https://github.com/reubano/ongeza
 .. _virtualenv: http://www.virtualenv.org/en/latest/index.html
