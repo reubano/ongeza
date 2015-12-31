@@ -73,6 +73,9 @@ parser.add_argument(
     default=ongeza.DEFAULT_COMMIT_MSG_FMT, help='git commit message format')
 
 parser.add_argument(
+    '-g', '--sign', action='store_true', help='make a GPG-signed tag')
+
+parser.add_argument(
     '-i', '--file', action='store', help='the versioned file')
 
 parser.add_argument(
@@ -155,7 +158,7 @@ def cleanup(project, new_version):
     if project.bumped and args.tag:
         message = args.tag_msg_format.format(version=new_version)
         tag_text = args.tag_format.format(version=new_version)
-        project.tag(message, tag_text)
+        project.tag(message, tag_text, sign=args.sign)
     elif args.tag:
         raise RuntimeError("%s Nothing to tag." % msg)
 
