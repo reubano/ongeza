@@ -69,7 +69,7 @@ class Project(Git):
         <ongeza.Project object at 0x...>
         """
         super(Project, self).__init__(dir_, verbose)
-        self.ongezaed = False
+        self.bumped = False
         self.file = file_
 
         if version:
@@ -156,7 +156,7 @@ class Project(Git):
 
             self.sh(cmd) if cmd else None
 
-        self.ongezaed = self.is_dirty
+        self.bumped = self.is_dirty
 
     def ongeza(self, ongeza_type):
         """

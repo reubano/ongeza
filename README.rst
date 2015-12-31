@@ -17,8 +17,8 @@ that makes following the `Semantic Versioning Specification`_ a breeze.
 If called with no options, ``ongeza`` will print the repo's current git tag
 version. With ongeza, you can
 
-- Quickly ongeza to a ``patch``, ``minor``, or ``major`` version
-- Stash uncommitted changes before ongezaing
+- Quickly bump to a ``patch``, ``minor``, or ``major`` version
+- Stash uncommitted changes before bumping
 - Create a git tag with the new version number
 - Bump python, php, and javascript projects
 - and much more...
@@ -35,7 +35,7 @@ Motivation
 I think we can all agree that Semantic Versioning is awesome sauce. But while
 coding, who has time to constantly look up the current version and figure out
 the new version? I created ongeza to relieve myself from this pain of having to
-worry about version numbers. For example, to ongeza to a ``minor`` version
+worry about version numbers. For example, to bump to a ``minor`` version
 inside a python ``git`` repo, simply type ``ongeza -Ttn``.
 
 As long as the repo contains a git tag with the current version, ongeza will
@@ -87,8 +87,8 @@ Basic Examples
 	                          p = patch - x.y.[z]
 	  -s NEW_VERSION, --set NEW_VERSION
 	                        set arbitrary version number
-	  -S, --skip-commit     skip committing version ongezaed files
-	  -T, --tag             create git tag at HEAD with the ongezaed version number
+	  -S, --skip-commit     skip committing version bumped files
+	  -T, --tag             create git tag at HEAD with the bumped version number
 	  -p, --push            push to the remote origin
 	  -a, --stash           stash uncommitted changes
 	  -f TAG_FORMAT, --tag-format TAG_FORMAT
@@ -107,7 +107,7 @@ Basic Examples
 
 	ongeza
 
-*ongeza to a ``minor`` version*
+*bump to a ``minor`` version*
 
 .. code-block:: bash
 
@@ -119,13 +119,13 @@ Basic Examples
 
 	ongeza -s 1.0.2
 
-*ongeza to a ``major`` version and add a git tag*
+*bump to a ``major`` version and add a git tag*
 
 .. code-block:: bash
 
 	ongeza -Ttm
 
-*stash uncommitted changes and ongeza to a ``patch`` version*
+*stash uncommitted changes and bump to a ``patch`` version*
 
 .. code-block:: bash
 
@@ -134,13 +134,13 @@ Basic Examples
 Advanced Examples
 ~~~~~~~~~~~~~~~~~
 
-*ongeza ``weird.file`` to a ``minor`` version and use custom formats*
+*bump ``weird.file`` to a ``minor`` version and use custom formats*
 
 .. code-block:: bash
 
 	ongeza -tn --file='weird.file' --tag-format='{version}' --commit-msg-format='New version: {version}'
 
-*ongeza a remote directory to a ``minor`` version and use a custom tag message format*
+*bump a remote directory to a ``minor`` version and use a custom tag message format*
 
 .. code-block:: bash
 
@@ -207,7 +207,7 @@ Design Principles
 -----------------
 
 - KISS: Keep it simple, stupid
-- Do one thing (version ongezaing), and do it well
+- Do one thing (version bumping), and do it well
 - Support the most common file types used for project versioning, e.g.,
   ``__init__.py``, ``package.json``, etc.
 

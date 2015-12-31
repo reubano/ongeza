@@ -33,7 +33,7 @@ group = parser.add_mutually_exclusive_group()
 group.add_argument(
     '-t', '--type', dest='ongeza_type', action='store', choices=['m', 'n', 'p'],
     help=(
-        "version ongeza type, must be one of:\n"
+        "version bump type, must be one of:\n"
         "  m = major - [x].0.0\n"
         "  n = minor - x.[y].0\n"
         "  p = patch - x.y.[z]"))
@@ -48,11 +48,11 @@ parser.add_argument(
 
 parser.add_argument(
     '-S', '--skip-commit', action='store_true', help='skip committing version'
-    ' ongezaed files')
+    ' bumped files')
 
 parser.add_argument(
     '-T', '--tag', action='store_true', help='create git tag at HEAD with the'
-    ' ongezaed version number')
+    ' bumped version number')
 
 parser.add_argument(
     '-p', '--push', action='store_true', help='push to the remote origin')
@@ -128,8 +128,8 @@ def ongeza_project(project):
         for wave in [1, 2]:
             project.set_versions(new_version, wave)
 
-            if project.ongezaed:
-                msg = 'ongezaed from version %s to %s'
+            if project.bumped:
+                msg = 'bumped from version %s to %s'
                 project.logger.info(msg, project.version, new_version)
                 break
         else:
@@ -144,7 +144,7 @@ def ongeza_project(project):
 
 def cleanup(project, new_version):
     msg = "Couldn't find a version to ongeza."
-    if project.ongezaed and not args.skip_commit:
+    if project.bumped and not args.skip_commit:
         message = args.commit_msg_format.format(version=new_version)
         project.add(project.dirty_files)
         project.commit(message)
@@ -152,7 +152,7 @@ def cleanup(project, new_version):
     if args.stash and project.stash_count:
         project.unstash()
 
-    if project.ongezaed and args.tag:
+    if project.bumped and args.tag:
         version = (project.version or args.new_version)
         message = args.tag_msg_format.format(version=version)
         tag_text = args.tag_format.format(version=version)
@@ -160,7 +160,7 @@ def cleanup(project, new_version):
     elif args.tag:
         raise RuntimeError("%s Nothing to tag." % msg)
 
-    if project.ongezaed and args.push:
+    if project.bumped and args.push:
         project.push()
     elif args.push:
         raise RuntimeError("%s Nothing to push." % msg)
