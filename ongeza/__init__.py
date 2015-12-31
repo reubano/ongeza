@@ -32,7 +32,7 @@ from builtins import *
 
 from .git_utils import Git
 
-__version__ = '1.8.0'
+__version__ = '1.8.1'
 
 __title__ = 'ongeza'
 __author__ = 'Reuben Cummings'
