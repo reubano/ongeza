@@ -10,15 +10,15 @@ helpers for working with git.
 Examples:
     basic usage::
 
-        >>> Git().tags  # doctest: +ELLIPSIS
-        [u'v0.8.0', u'v0.8.1', ...]
+        >>> Git().tags[:2] == ['v0.8.0', 'v0.8.1']
+        True
 """
 
 from __future__ import (
     absolute_import, division, print_function, with_statement,
     unicode_literals)
 
-from functools import partial
+from functools import partial, cmp_to_key
 
 import pygogo as gogo
 import semver
@@ -103,7 +103,7 @@ class Git(object):
         cmd = 'git tag'
         tags = self.sh(cmd, True).split('\n')
         compare = lambda x, y: semver.compare(x.lstrip('v'), y.lstrip('v'))
-        return sorted(tags, compare)
+        return sorted(tags, key=cmp_to_key(compare))
 
     def add(self, files):
         files = ' '.join(files)
