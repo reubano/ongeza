@@ -2,6 +2,11 @@ ongeza: your project versioning personal assistant
 ==================================================
 |travis| |versions| |pypi|
 
+.. image:: https://raw.githubusercontent.com/reubano/ongeza/master/ongeza.png
+    :alt: sample ongeza usage
+    :width: 800
+    :align: center
+
 Index
 -----
 `Introduction`_ | `Requirements`_ | `Motivation`_ | `Usage`_ | `Installation`_ |
