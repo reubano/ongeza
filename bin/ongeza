@@ -9,9 +9,9 @@ from __future__ import (
     unicode_literals)
 
 import sys
-sys.path.append('../bump')
+sys.path.append('../ongeza')
 
-from bump import main
+from ongeza import main
 
 if __name__ == '__main__':
     main.run()

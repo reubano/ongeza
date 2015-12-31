@@ -6,7 +6,7 @@
 tests.testscript
 ~~~~~~~~~~~~~~~~
 
-Tests bump CLI functionality.
+Tests ongeza CLI functionality.
 """
 
 from __future__ import (
@@ -16,8 +16,8 @@ from __future__ import (
 import sys
 import pygogo as gogo
 
-sys.path.append('../bump')
-from bump import __version__ as version
+sys.path.append('../ongeza')
+from ongeza import __version__ as version
 
 from difflib import unified_diff
 from os import path as p
@@ -89,11 +89,11 @@ def main(script, tests, dir_, verbose=False, stop=True):
 
 if __name__ == '__main__':
     parent_dir = p.dirname(p.dirname(__file__))
-    script = p.join(parent_dir, 'bin', 'bump')
+    script = p.join(parent_dir, 'bin', 'ongeza')
 
     tests = [
         (['--help'], [], True),
-        (['--version'], [], 'bump v%s\n' % version),
+        (['--version'], [], 'ongeza v%s\n' % version),
     ]
 
     main(script, tests, parent_dir)

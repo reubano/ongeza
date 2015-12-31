@@ -1,5 +1,5 @@
-bump: your semantic versioning personal assistant
-=================================================
+ongeza: your semantic versioning personal assistant
+===================================================
 |travis| |versions| |pypi|
 
 Index
@@ -12,12 +12,13 @@ Index
 Introduction
 ------------
 
-bump is a Python command line application_ (CLI) that makes following the
-`Semantic Versioning Specification`_ a breeze. If called with no options, bump
-will print the repo's current git tag version. With bump, you can
+ongeza is Swahili for "increase" and a Python command line application_ (CLI)
+that makes following the `Semantic Versioning Specification`_ a breeze.
+If called with no options, ``ongeza`` will print the repo's current git tag
+version. With ongeza, you can
 
-- Quickly bump to a ``patch``, ``minor``, or ``major`` version
-- Stash uncommitted changes before bumping
+- Quickly ongeza to a ``patch``, ``minor``, or ``major`` version
+- Stash uncommitted changes before ongezaing
 - Create a git tag with the new version number
 - Bump python, php, and javascript projects
 - and much more...
@@ -25,7 +26,7 @@ will print the repo's current git tag version. With bump, you can
 Requirements
 ------------
 
-bump has been tested and is known to work on Python 2.7, 3.4, and 3.5;
+ongeza has been tested and is known to work on Python 2.7, 3.4, and 3.5;
 and PyPy 4.0
 
 Motivation
@@ -33,11 +34,11 @@ Motivation
 
 I think we can all agree that Semantic Versioning is awesome sauce. But while
 coding, who has time to constantly look up the current version and figure out
-the new version? I created bump to relieve myself from this pain of having to
-worry about version numbers. For example, to bump to a ``minor`` version
-inside a python ``git`` repo, simply type ``bump -Ttn``.
+the new version? I created ongeza to relieve myself from this pain of having to
+worry about version numbers. For example, to ongeza to a ``minor`` version
+inside a python ``git`` repo, simply type ``ongeza -Ttn``.
 
-As long as the repo contains a git tag with the current version, bump will
+As long as the repo contains a git tag with the current version, ongeza will
 automagically:
 
 - calculate the new version number
@@ -50,11 +51,11 @@ automagically:
 Usage
 -----
 
-bump is intended to be used from the command line.
+ongeza is intended to be used from the command line.
 
 .. code-block:: bash
 
-	bump [options] <dir>
+	ongeza [options] <dir>
 
 Basic Examples
 ~~~~~~~~~~~~~~
@@ -63,31 +64,31 @@ Basic Examples
 
 .. code-block:: bash
 
-    bump -h
+    ongeza -h
 
 .. code-block:: bash
 
-	usage: bump [options] <dir>
+	usage: ongeza [options] <dir>
 
-	description: bump makes following the Semantic Versioning Specification a breeze.
-	If called with no options, bump will print the current git repository's tag version.
+	description: ongeza makes following the Semantic Versioning Specification a breeze.
+	If called with no options, ongeza will print the current git repository's tag version.
 	If <dir> is not specified, the current dir is used.
 
 	positional arguments:
-	  dir                   the project directory (default: /Users/reubano/Documents/Projects/bump).
+	  dir                   the project directory (default: /Users/reubano/Documents/Projects/ongeza).
 
 
 	optional arguments:
 	  -h, --help            show this help message and exit
 	  -t {m,n,p}, --type {m,n,p}
-	                        version bump type, must be one of:
+	                        version ongeza type, must be one of:
 	                          m = major - [x].0.0
 	                          n = minor - x.[y].0
 	                          p = patch - x.y.[z]
 	  -s NEW_VERSION, --set NEW_VERSION
 	                        set arbitrary version number
-	  -S, --skip-commit     skip committing version bumped files
-	  -T, --tag             create git tag at HEAD with the bumped version number
+	  -S, --skip-commit     skip committing version ongezaed files
+	  -T, --tag             create git tag at HEAD with the ongezaed version number
 	  -p, --push            push to the remote origin
 	  -a, --stash           stash uncommitted changes
 	  -f TAG_FORMAT, --tag-format TAG_FORMAT
@@ -104,63 +105,63 @@ Basic Examples
 
 .. code-block:: bash
 
-	bump
+	ongeza
 
-*bump to a ``minor`` version*
+*ongeza to a ``minor`` version*
 
 .. code-block:: bash
 
-	bump -tn
+	ongeza -tn
 
 *manually set a version*
 
 .. code-block:: bash
 
-	bump -s 1.0.2
+	ongeza -s 1.0.2
 
-*bump to a ``major`` version and add a git tag*
-
-.. code-block:: bash
-
-	bump -Ttm
-
-*stash uncommitted changes and bump to a ``patch`` version*
+*ongeza to a ``major`` version and add a git tag*
 
 .. code-block:: bash
 
-	bump -atp
+	ongeza -Ttm
+
+*stash uncommitted changes and ongeza to a ``patch`` version*
+
+.. code-block:: bash
+
+	ongeza -atp
 
 Advanced Examples
 ~~~~~~~~~~~~~~~~~
 
-*bump ``weird.file`` to a ``minor`` version and use custom formats*
+*ongeza ``weird.file`` to a ``minor`` version and use custom formats*
 
 .. code-block:: bash
 
-	bump -tn --file='weird.file' --tag-format='{version}' --commit-msg-format='New version: {version}'
+	ongeza -tn --file='weird.file' --tag-format='{version}' --commit-msg-format='New version: {version}'
 
-*bump a remote directory to a ``minor`` version and use a custom tag message format*
+*ongeza a remote directory to a ``minor`` version and use a custom tag message format*
 
 .. code-block:: bash
 
-	bump -tn --tag-msg-format='Release: {version}' /path/to/remote/dir
+	ongeza -tn --tag-msg-format='Release: {version}' /path/to/remote/dir
 
 Installation
 ------------
 
 (You are using a `virtualenv`_, right?)
 
-At the command line, install bump using either ``pip`` (*recommended*)
+At the command line, install ongeza using either ``pip`` (*recommended*)
 
 .. code-block:: bash
 
-    pip install bump
+    pip install ongeza
 
 or ``easy_install``
 
 .. code-block:: bash
 
-    easy_install bump
+    easy_install ongeza
 
 Please see the `installation doc`_ for more details.
 
@@ -177,8 +178,8 @@ Project structure
     ├── Makefile
     ├── README.rst
     ├── bin
-    │   └── bump
-    ├── bump
+    │   └── ongeza
+    ├── ongeza
     │   ├── __init__.py
     │   ├── git_utils.py
     │   ├── main.py
@@ -199,14 +200,14 @@ Project structure
     │   ├── __init__.py
     │   ├── standard.rc
     │   ├── test.py
-    │   └── test_bump.py
+    │   └── test_ongeza.py
     └── tox.ini
 
 Design Principles
 -----------------
 
 - KISS: Keep it simple, stupid
-- Do one thing (version bumping), and do it well
+- Do one thing (version ongezaing), and do it well
 - Support the most common file types used for project versioning, e.g.,
   ``__init__.py``, ``package.json``, etc.
 
@@ -220,7 +221,7 @@ Limitations
 Scripts
 -------
 
-bump comes with a built in task manager ``manage.py``
+ongeza comes with a built in task manager ``manage.py``
 
 Setup
 ~~~~~
@@ -251,19 +252,19 @@ Please see the `contributing doc`_ for more details.
 License
 -------
 
-bump is distributed under the `MIT License`_.
+ongeza is distributed under the `MIT License`_.
 
-.. |travis| image:: https://img.shields.io/travis/reubano/bump/master.svg
-    :target: https://travis-ci.org/reubano/bump
+.. |travis| image:: https://img.shields.io/travis/reubano/ongeza/master.svg
+    :target: https://travis-ci.org/reubano/ongeza
 
-.. |versions| image:: https://img.shields.io/pypi/pyversions/bump.svg
-    :target: https://pypi.python.org/pypi/bump
+.. |versions| image:: https://img.shields.io/pypi/pyversions/ongeza.svg
+    :target: https://pypi.python.org/pypi/ongeza
 
-.. |pypi| image:: https://img.shields.io/pypi/v/bump.svg
-    :target: https://pypi.python.org/pypi/bump
+.. |pypi| image:: https://img.shields.io/pypi/v/ongeza.svg
+    :target: https://pypi.python.org/pypi/ongeza
 
 .. _MIT License: http://opensource.org/licenses/MIT
 .. _Semantic Versioning Specification: http://semver.org/
 .. _virtualenv: http://www.virtualenv.org/en/latest/index.html
-.. _contributing doc: https://github.com/reubano/bump/blob/master/CONTRIBUTING.rst
-.. _installation doc: https://github.com/reubano/bump/blob/master/INSTALLATION.rst
+.. _contributing doc: https://github.com/reubano/ongeza/blob/master/CONTRIBUTING.rst
+.. _installation doc: https://github.com/reubano/ongeza/blob/master/INSTALLATION.rst

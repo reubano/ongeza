@@ -10,7 +10,7 @@ import sys
 from os import path as p
 from builtins import *
 
-import bump as module
+import ongeza as module
 import pkutils
 
 try:
@@ -79,5 +79,5 @@ setup(
         'Operating System :: Microsoft :: Windows',
     ],
     platforms=['MacOS X', 'Windows', 'Linux'],
-    scripts=[p.join('bin', 'bump')]
+    scripts=[p.join('bin', 'ongeza')]
 )

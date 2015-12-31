@@ -27,7 +27,7 @@ require:
 	pip freeze -l | grep -vxFf dev-requirements.txt > requirements.txt
 
 lint:
-	flake8 bump tests
+	flake8 ongeza tests
 
 test:
 	nosetests -xv

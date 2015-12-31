@@ -2,8 +2,8 @@
 # vim: sw=4:ts=4:expandtab
 
 """
-bump
-~~~~
+ongeza
+~~~~~~
 
 An automated way to follow the Semantic Versioning Specification
 
@@ -34,7 +34,7 @@ from .git_utils import Git
 
 __version__ = '1.7.7'
 
-__title__ = 'bump'
+__title__ = 'ongeza'
 __author__ = 'Reuben Cummings'
 __description__ = 'Your Semantic Versioning personal assistant'
 __email__ = 'reubano@gmail.com'
@@ -66,10 +66,10 @@ class Project(Git):
         Examples
         --------
         >>> Project()  # doctest: +ELLIPSIS
-        <bump.Project object at 0x...>
+        <ongeza.Project object at 0x...>
         """
         super(Project, self).__init__(dir_, verbose)
-        self.bumped = False
+        self.ongezaed = False
         self.file = file_
 
         if version:
@@ -156,14 +156,14 @@ class Project(Git):
 
             self.sh(cmd) if cmd else None
 
-        self.bumped = self.is_dirty
+        self.ongezaed = self.is_dirty
 
-    def bump(self, bump_type):
+    def ongeza(self, ongeza_type):
         """
         Parameters
         ----------
         version_num: string version name.
-        bump_type: version bump type. one of:
+        ongeza_type: version ongeza type. one of:
             m = major - [x].0.0
             n = minor - x.[y].0
             p = patch - x.y.[z]
@@ -173,11 +173,11 @@ class Project(Git):
         concatenated string of the incremented version name.
         """
         switch = {
-            'm': semver.bump_major,
-            'n': semver.bump_minor,
-            'p': semver.bump_patch}
+            'm': semver.ongeza_major,
+            'n': semver.ongeza_minor,
+            'p': semver.ongeza_patch}
 
-        new_version = switch.get(bump_type)(self.version)
+        new_version = switch.get(ongeza_type)(self.version)
 
         if new_version in set(self.versions):
             self.logger.error('version `%s` already present', new_version)

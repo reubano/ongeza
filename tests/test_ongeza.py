@@ -16,9 +16,9 @@ import pygogo as gogo
 
 from builtins import *
 
-sys.path.append('../bump')
-from bump import __version__ as version
-from bump.git_utils import Git
+sys.path.append('../ongeza')
+from ongeza import __version__ as version
+from ongeza.git_utils import Git
 # from mock import patch
 
 module_logger = gogo.Gogo(__name__).logger
@@ -60,7 +60,7 @@ class TestGit:
     #     test that the script works with a clean index
     #     """
     #     is_clean.return_value = True
-    #     nt.ok_(project.bump())
+    #     nt.ok_(project.ongeza())
 
     # @patch('self.git.is_clean')
     # @patch('self.git.dirty_files')
@@ -72,7 +72,7 @@ class TestGit:
     #     dirty_files.return_value = ['file1', 'file2']
 
     #     errmsg = 'aborting.. un[stashed/committed] changes'
-    #     err = project.bump()
+    #     err = project.ongeza()
     #     nt.assert_in(errmsg, err)
     #     nt.assert_in('file1', err)
     #     nt.assert_in('file2', err)
@@ -87,4 +87,4 @@ class TestGit:
     #     stash.return_value = None
     #     is_clean.return_value = False
     #     dirty_files.return_value = ['file1', 'file2']
-    #     nt.ok_(project.bump())
+    #     nt.ok_(project.ongeza())

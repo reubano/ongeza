@@ -2,8 +2,8 @@
 # vim: sw=4:ts=4:expandtab
 
 """
-bump.shell_utils
-~~~~~~~~~~~~~~~~
+ongeza.shell_utils
+~~~~~~~~~~~~~~~~~~
 
 helpers for working with the shell.
 

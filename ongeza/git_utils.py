@@ -2,8 +2,8 @@
 # vim: sw=4:ts=4:expandtab
 
 """
-bump.git_utils
-~~~~~~~~~~~~~~
+ongeza.git_utils
+~~~~~~~~~~~~~~~~
 
 helpers for working with git.
 
