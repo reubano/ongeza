@@ -1,5 +1,5 @@
-ongeza: your semantic versioning personal assistant
-===================================================
+ongeza: your project versioning personal assistant
+==================================================
 |travis| |versions| |pypi|
 
 Index
@@ -32,7 +32,7 @@ and PyPy 4.0
 Motivation
 ----------
 
-I think we can all agree that Semantic Versioning is awesome sauce. But while
+I think we can all agree that `semver`_ is awesome sauce. But while
 coding, who has time to constantly look up the current version and figure out
 the new version? I created ongeza to relieve myself from this pain of having to
 worry about version numbers. For example, to bump to a ``minor`` version
@@ -107,7 +107,7 @@ Basic Examples
 
 	ongeza
 
-*bump to a ``minor`` version*
+*bump to a `minor` version*
 
 .. code-block:: bash
 
@@ -119,13 +119,13 @@ Basic Examples
 
 	ongeza -s 1.0.2
 
-*bump to a ``major`` version and add a git tag*
+*bump to a `major` version and add a git tag*
 
 .. code-block:: bash
 
 	ongeza -Ttm
 
-*stash uncommitted changes and bump to a ``patch`` version*
+*stash uncommitted changes and bump to a `patch` version*
 
 .. code-block:: bash
 
@@ -134,13 +134,13 @@ Basic Examples
 Advanced Examples
 ~~~~~~~~~~~~~~~~~
 
-*bump ``weird.file`` to a ``minor`` version and use custom formats*
+*bump `weird.file` to a `minor` version and use custom formats*
 
 .. code-block:: bash
 
 	ongeza -tn --file='weird.file' --tag-format='{version}' --commit-msg-format='New version: {version}'
 
-*bump a remote directory to a ``minor`` version and use a custom tag message format*
+*bump a remote directory to a `minor` version and use a custom tag message format*
 
 .. code-block:: bash
 
@@ -264,6 +264,7 @@ ongeza is distributed under the `MIT License`_.
     :target: https://pypi.python.org/pypi/ongeza
 
 .. _MIT License: http://opensource.org/licenses/MIT
+.. _semver: http://semver.org/
 .. _Semantic Versioning Specification: http://semver.org/
 .. _virtualenv: http://www.virtualenv.org/en/latest/index.html
 .. _contributing doc: https://github.com/reubano/ongeza/blob/master/CONTRIBUTING.rst
