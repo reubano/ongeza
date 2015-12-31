@@ -173,9 +173,9 @@ class Project(Git):
         concatenated string of the incremented version name.
         """
         switch = {
-            'm': semver.ongeza_major,
-            'n': semver.ongeza_minor,
-            'p': semver.ongeza_patch}
+            'm': semver.bump_major,
+            'n': semver.bump_minor,
+            'p': semver.bump_patch}
 
         new_version = switch.get(ongeza_type)(self.version)
 
