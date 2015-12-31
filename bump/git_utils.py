@@ -10,17 +10,15 @@ helpers for working with git.
 Examples:
     basic usage::
 
-        >>> from os import path as p
-        >>> git = Git(p.abspath(p.dirname(p.dirname(__file__))))
-        >>> git.tags  # doctest: +ELLIPSIS
-        [u'v0.8.0', u'v0.8.1', ...]
+        >>> Git().tags[:2] == ['v0.8.0', 'v0.8.1']
+        True
 """
 
 from __future__ import (
     absolute_import, division, print_function, with_statement,
     unicode_literals)
 
-from functools import partial
+from functools import partial, cmp_to_key
 
 import pygogo as gogo
 import semver
@@ -33,7 +31,7 @@ class Git(object):
     """
     class representing Git commands.
     """
-    def __init__(self, dir_, verbose=False):
+    def __init__(self, dir_=None, verbose=False):
         """
         Parameters
         ----------
@@ -105,7 +103,7 @@ class Git(object):
         cmd = 'git tag'
         tags = self.sh(cmd, True).split('\n')
         compare = lambda x, y: semver.compare(x.lstrip('v'), y.lstrip('v'))
-        return sorted(tags, compare)
+        return sorted(tags, key=cmp_to_key(compare))
 
     def add(self, files):
         files = ' '.join(files)
@@ -125,7 +123,6 @@ class Git(object):
         """
         pushes current branch and tags to remote.
         """
-        # don't call --all here on purpose..
         return self.sh("git push && git push --tags")
 
     def stash(self):

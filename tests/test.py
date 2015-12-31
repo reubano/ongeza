@@ -17,7 +17,7 @@ import sys
 import pygogo as gogo
 
 sys.path.append('../bump')
-import bump
+from bump import __version__ as version
 
 from difflib import unified_diff
 from os import path as p
@@ -28,7 +28,7 @@ from builtins import *
 from scripttest import TestFileEnvironment
 
 
-def main(script, tests, verbose=False, stop=True):
+def main(script, tests, dir_, verbose=False, stop=True):
     """ Main method
     Returns 0 on success, 1 on failure
     """
@@ -46,7 +46,7 @@ def main(script, tests, verbose=False, stop=True):
         joined_args = '"%s"' % '" "'.join(arguments) if arguments else ''
         command = "%s %s %s" % (script, joined_opts, joined_args)
         short_command = "%s %s %s" % (short_script, joined_opts, joined_args)
-        result = env.run(command, cwd=p.abspath(p.dirname(p.dirname(__file__))))
+        result = env.run(command, cwd=dir_)
         output = result.stdout
 
         if isinstance(expected, bool):
@@ -88,12 +88,12 @@ def main(script, tests, verbose=False, stop=True):
     sys.exit(failures)
 
 if __name__ == '__main__':
-    parent_dir = p.abspath(p.dirname(p.dirname(__file__)))
+    parent_dir = p.dirname(p.dirname(__file__))
     script = p.join(parent_dir, 'bin', 'bump')
 
     tests = [
         (['--help'], [], True),
-        (['--version'], [], 'bump v%s\n' % bump.__version__),
+        (['--version'], [], 'bump v%s\n' % version),
     ]
 
-    main(script, tests)
+    main(script, tests, parent_dir)
