@@ -153,9 +153,8 @@ def cleanup(project, new_version):
         project.unstash()
 
     if project.bumped and args.tag:
-        version = (project.version or args.new_version)
-        message = args.tag_msg_format.format(version=version)
-        tag_text = args.tag_format.format(version=version)
+        message = args.tag_msg_format.format(version=new_version)
+        tag_text = args.tag_format.format(version=new_version)
         project.tag(message, tag_text)
     elif args.tag:
         raise RuntimeError("%s Nothing to tag." % msg)
