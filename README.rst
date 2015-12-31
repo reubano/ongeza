@@ -2,6 +2,13 @@ bump: your semantic versioning personal assistant
 =================================================
 |travis| |versions| |pypi|
 
+Index
+-----
+`Introduction`_ | `Requirements`_ | `Motivation`_ | `Usage`_ | `Installation`_ |
+`Project Structure`_
+
+`Design Principles`_ | `Scripts`_ | `Contributing`_ | `License`_
+
 Introduction
 ------------
 
@@ -18,13 +25,8 @@ will print the repo's current git tag version. With bump, you can
 Requirements
 ------------
 
-bump has been tested and is known to work on the following `Python versions`_:
-
-- 2.7
-- 3.4
-- 3.5
-- pypy v4.0
-- pypy3 v2.4
+bump has been tested and is known to work on Python 2.7, 3.4, and 3.5;
+and PyPy 4.0
 
 Motivation
 ----------
@@ -263,6 +265,5 @@ bump is distributed under the `MIT License`_.
 .. _MIT License: http://opensource.org/licenses/MIT
 .. _Semantic Versioning Specification: http://semver.org/
 .. _virtualenv: http://www.virtualenv.org/en/latest/index.html
-.. _Python versions: http://www.python.org/download
 .. _contributing doc: https://github.com/reubano/bump/blob/master/CONTRIBUTING.rst
 .. _installation doc: https://github.com/reubano/bump/blob/master/INSTALLATION.rst
