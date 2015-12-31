@@ -10,10 +10,13 @@ from __future__ import (
     absolute_import, division, print_function, with_statement,
     unicode_literals)
 
+import sys
 import nose.tools as nt
 import pygogo as gogo
 
 from builtins import *
+
+sys.path.append('../bump')
 from bump import __version__ as version
 from bump.git_utils import Git
 # from mock import patch
