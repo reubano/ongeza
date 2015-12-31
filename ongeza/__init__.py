@@ -32,7 +32,7 @@ from builtins import *
 
 from .git_utils import Git
 
-__version__ = '1.8.0'
+__version__ = '1.8.1'
 
 __title__ = 'ongeza'
 __author__ = 'Reuben Cummings'
@@ -69,7 +69,7 @@ class Project(Git):
         <ongeza.Project object at 0x...>
         """
         super(Project, self).__init__(dir_, verbose)
-        self.ongezaed = False
+        self.bumped = False
         self.file = file_
 
         if version:
@@ -156,7 +156,7 @@ class Project(Git):
 
             self.sh(cmd) if cmd else None
 
-        self.ongezaed = self.is_dirty
+        self.bumped = self.is_dirty
 
     def ongeza(self, ongeza_type):
         """
@@ -173,9 +173,9 @@ class Project(Git):
         concatenated string of the incremented version name.
         """
         switch = {
-            'm': semver.ongeza_major,
-            'n': semver.ongeza_minor,
-            'p': semver.ongeza_patch}
+            'm': semver.bump_major,
+            'n': semver.bump_minor,
+            'p': semver.bump_patch}
 
         new_version = switch.get(ongeza_type)(self.version)
 
