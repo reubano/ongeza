@@ -147,11 +147,12 @@ class Project(Git):
         if self.file:
             yield self.file
         else:
-            wave_one = [
-                '*.spec', 'setup.cfg', 'setup.py', '*/__init__.py',
-                '*.xml', '*.json']
-
-            switch = {1: wave_one, 2: ['*.php', '*.py']}
+            py_files = ['setup.cfg', 'setup.py', '*/__init__.py']
+            js_files = ['bower.json', 'package.json', 'component.json']
+            php_files = ['composer.json']
+            misc_files = ['*.spec', '*.php', '*.py', '*.xml', '*.json']
+            wave_one = py_files + js_files + php_files
+            switch = {1: wave_one, 2: misc_files}
 
             for git_file in self.files:
                 if any(fnmatch(git_file, file) for file in switch[wave]):
