@@ -50,23 +50,38 @@ logger = gogo.Gogo(__name__).logger
 
 class Project(Git):
     """
-    class representing a project object.
+    Class representing a project.
+
+    Attributes:
+        bumped (bool): Has the project's version been bumped?
+
+        file (str): The file to search for a version.
+
+        version (str): The project's version.
+
+    Args:
+        dir_ (str): The project directory (default: None).
+
+        file_ (str): The file to search for a version (default: None).
+
+        version (str): The project's initial version (default: None).
+
+        verbose (bool): Enable verbose logging (default: False).
+
+    Returns:
+        New instance of :class:`pygogo.Gogo`
+
+    Examples:
+        >>> 'major' in semver.parse(Project().current_version)
+        True
     """
 
     def __init__(self, dir_=None, file_=None, version=None, verbose=False):
-        """
-        Parameters
-        ----------
-        dir : str
-            the project directory
+        """Initialization method.
 
-        file_ : str
-            the file to search for a version
-
-        Examples
-        --------
-        >>> Project()  # doctest: +ELLIPSIS
-        <ongeza.Project object at 0x...>
+        Examples:
+            >>> Project()  # doctest: +ELLIPSIS
+            <ongeza.Project object at 0x...>
         """
         super(Project, self).__init__(dir_, verbose)
         self.bumped = False
@@ -79,10 +94,15 @@ class Project(Git):
 
     @property
     def current_version(self):
+        """The current version parsed from most recent git tag
+
+        Returns:
+            str: current version
+
+        Examples:
+            >>> semver.parse(Project().current_version)['major'] >= 1
+            True
         """
-        :returns: string of the current version parsed from most recent git tag
-        """
-        # what to do on first time run? no tags yet..
         if self.current_tag:
             version = self.current_tag.lstrip('v')
         else:
@@ -95,13 +115,35 @@ class Project(Git):
 
     @property
     def versions(self):
-        """
-        :returns: iterator of all valid versions parsed from the git tags
+        """All valid versions parsed from the git tags
+
+        Returns:
+            iterator: valid versions
+
+        Examples:
+            >>> len(list(Project().versions)) > 1
+            True
         """
         versions = (t.lstrip('v') for t in self.tags)
         return filter(version_is_valid, versions)
 
     def gen_versioned_files(self, wave):
+        """Generates file names which may contain a version string
+
+        Args:
+            wave (int): The set of files to search. Wave 1 includes specific
+                files, e.g., 'setup.py', 'bower.json', etc. Wave 2 includes
+                general files, e.g., '*.spec', '*.php', '*.py', etc. The best
+                practice is to only use wave 2 when wave 1 fails to return a
+                versioned file.
+
+        Yields:
+            str: file name
+
+        Examples:
+            >>> next(Project().gen_versioned_files()) == 'ongeza/__init__.py'
+            True
+        """
         if self.file:
             yield self.file
         else:
