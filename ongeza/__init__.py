@@ -127,7 +127,7 @@ class Project(Git):
         versions = (t.lstrip('v') for t in self.tags)
         return filter(version_is_valid, versions)
 
-    def gen_versioned_files(self, wave):
+    def gen_versioned_files(self, wave=1):
         """Generates file names which may contain a version string
 
         Args:
