@@ -58,12 +58,6 @@ class Git(object):
         -------
         boolean if there is a dirty index.
         """
-        # # check for unstaged changes
-        # unstaged = sh("git diff-files --ignore-submodules")
-
-        # # check for uncommitted changes
-        # uncommitted = sh("git diff-index --cached HEAD --ignore-submodules")
-        # return not (unstaged or uncommitted)
         return self.sh("git diff --quiet")
 
     @property
