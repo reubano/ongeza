@@ -233,4 +233,4 @@ def version_is_valid(version):
         return semver.parse(version)
     except (ValueError, TypeError):
         logger.debug('%s is not a valid version', version)
-        return False
+        return {}
