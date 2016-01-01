@@ -10,7 +10,8 @@ ongeza: your project versioning personal assistant
 Index
 -----
 `Introduction`_ | `Requirements`_ | `Motivation`_ | `Usage`_ | `Installation`_ |
-`Project Structure`_ | `Design Principles`_ | `Limitations`_ | `Scripts`_ | `Contributing`_ | `License`_
+`Project Structure`_ | `Design Principles`_ | `Limitations`_ | `Scripts`_ |
+`Contributing`_ | `License`_
 
 Introduction
 ------------
@@ -52,8 +53,6 @@ automagically:
 - figure out which file(s) to update with the new version number
 - make the appropriate updates and commit the changes
 - create a git tag with the new version number
-
-.. _command line application:
 
 Usage
 -----
