@@ -201,19 +201,27 @@ class Project(Git):
 
         self.bumped = self.is_dirty
 
-    def ongeza(self, ongeza_type):
-        """
-        Parameters
-        ----------
-        version_num: string version name.
-        ongeza_type: version ongeza type. one of:
-            m or major: [x].0.0
-            n or minor: x.[y].0
-            p or patch: x.y.[z]
+    def ongeza(self, type_):
+        """Bumps a project to a new version
 
-        Returns
-        -------
-        concatenated string of the incremented version name.
+        Args:
+            type_ (str): bump type. one of:
+                m or major: [x].0.0
+                n or minor: x.[y].0
+                p or patch: x.y.[z]
+
+        Returns:
+            str: new version
+
+        Examples:
+            >>> project = Project()
+            >>> old_version = semver.parse(project.version)
+            >>> new_version = semver.parse(project.ongeza('m'))
+            >>> new_version['major'] == old_version['major'] + 1
+            True
+            >>> new_version = semver.parse(project.ongeza('minor'))
+            >>> new_version['minor'] == old_version['minor'] + 1
+            True
         """
         switch = {
             'm': semver.bump_major,
@@ -223,7 +231,7 @@ class Project(Git):
             'minor': semver.bump_minor,
             'patch': semver.bump_patch}
 
-        new_version = switch.get(ongeza_type)(self.version)
+        new_version = switch.get(type_)(self.version)
 
         if new_version in set(self.versions):
             self.logger.error('version `%s` already present', new_version)
@@ -233,6 +241,23 @@ class Project(Git):
 
 
 def version_is_valid(version):
+    """Determines whether a given version meets the semver spec, and if so
+    returns the parsed result.
+
+    Args:
+        version (str): The version to test
+
+    Returns:
+        dict: The parsed version (or an empty dict).
+
+    Examples:
+        >>> bool(version_is_valid('1.0.1'))
+        True
+        >>> bool(version_is_valid('1.0.1')['major'])
+        True
+        >>> bool(version_is_valid('1.0'))
+        False
+    """
     try:
         return semver.parse(version)
     except (ValueError, TypeError):
