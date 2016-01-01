@@ -118,26 +118,11 @@ def ongeza_project(project):
 
     if args.new_version and version_is_valid(args.new_version):
         new_version = args.new_version
-        project.set_versions(args.new_version)
-        project.logger.info('Set to version %s', args.new_version)
     elif args.new_version:
         msg = "Invalid version: '{0.version}'. Please use x.y.z format."
         raise RuntimeError(msg.format(args))
     elif project.version and args.ongeza_type:
         new_version = project.ongeza(args.ongeza_type)
-
-        # in some cases, e.g., single file python modules, the versioned file
-        # can't be predetermined and we must do a 2nd search over all files
-        for wave in [1, 2]:
-            project.set_versions(new_version, wave)
-
-            if project.bumped:
-                msg = 'bumped from version %s to %s'
-                project.logger.info(msg, project.version, new_version)
-                break
-        else:
-            msg = "Couldn't find version '{0.version}' in any files."
-            raise RuntimeError(msg.format(project))
     else:
         error = "No git tags found, please run with '-s and -T' options"
         raise RuntimeError(error)
@@ -168,6 +153,21 @@ def cleanup(project, new_version):
         raise RuntimeError("%s Nothing to push." % msg)
 
 
+def set_versions(new_version):
+    # in some cases, e.g., single file python modules, the versioned file
+    # can't be predetermined and we must do a 2nd search over all files
+    for wave in [1, 2]:
+        project.set_versions(new_version, wave)
+
+        if project.bumped:
+            msg = 'Bumped from version %s to %s.'
+            project.logger.info(msg, project.version, new_version)
+            break
+    else:
+        msg = "Couldn't find version '{0.version}' in any files."
+        raise RuntimeError(msg.format(project))
+
+
 def run():
     project = Project(args.dir, args.file, verbose=args.verbose)
 
@@ -176,6 +176,7 @@ def run():
 
     try:
         new_version = ongeza_project(project)
+        set_versions(new_version)
     except RuntimeError as err:
         project.logger.error(err)
         exit(1)
