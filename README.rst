@@ -10,14 +10,12 @@ ongeza: your project versioning personal assistant
 Index
 -----
 `Introduction`_ | `Requirements`_ | `Motivation`_ | `Usage`_ | `Installation`_ |
-`Project Structure`_
-
-`Design Principles`_ | `Limitations`_ | `Scripts`_ | `Contributing`_ | `License`_
+`Project Structure`_ | `Design Principles`_ | `Limitations`_ | `Scripts`_ | `Contributing`_ | `License`_
 
 Introduction
 ------------
 
-ongeza is Swahili for "increase" and a Python command line application_ (CLI)
+ongeza (Swahili for "increase") is a Python `command line application <#usage>`_ (CLI)
 that makes following the `Semantic Versioning Specification`_ a breeze.
 If called with no options, ``ongeza`` will print the repo's current git tag
 version. With ongeza, you can
@@ -41,7 +39,11 @@ I think we can all agree that `semver`_ is awesome sauce. But while
 coding, who has time to constantly look up the current version and figure out
 the new version? I created ongeza to relieve myself from this pain of having to
 worry about version numbers. For example, to bump to a ``minor`` version
-inside a python ``git`` repo, simply type ``ongeza -Ttn``.
+inside a python ``git`` repo, simply type:
+
+.. code-block:: bash
+
+    ongeza -Ttn
 
 As long as the repo contains a git tag with the current version, ongeza will
 automagically:
@@ -51,7 +53,7 @@ automagically:
 - make the appropriate updates and commit the changes
 - create a git tag with the new version number
 
-.. _application:
+.. _command line application:
 
 Usage
 -----
@@ -86,7 +88,7 @@ Basic Examples
 	optional arguments:
 	  -h, --help            show this help message and exit
 	  -t {m,n,p}, --type {m,n,p}
-	                        version ongeza type, must be one of:
+	                        version bump type, must be one of:
 	                          m = major - [x].0.0
 	                          n = minor - x.[y].0
 	                          p = patch - x.y.[z]
