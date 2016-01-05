@@ -17,7 +17,7 @@ import pygogo as gogo
 from builtins import *
 
 sys.path.append('../ongeza')
-from ongeza import __version__ as version
+from ongeza import __version__ as version, TRAVIS
 from ongeza.git_utils import Git
 # from mock import patch
 
@@ -47,7 +47,9 @@ class TestGit:
 
     def test_current_git_tag(self):
         tag = self.git.current_tag
-        nt.assert_in(tag.lstrip('v'), {version, '1.2.0'})
+
+        if not TRAVIS:
+            nt.assert_equal(version, tag.lstrip('v'))
 
     def test_git_tags(self):
         tags = self.git.tags
