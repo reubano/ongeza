@@ -107,7 +107,7 @@ Basic Examples
                             git tag message format
       -c FORMAT, --commit-msg-format FORMAT
                             git commit message format
-      -g, --sign            make a GPG-signed tag
+      -g, --sign            make a GPG-signed tag (implies `--tag`)
       -i FILE, --file FILE  the versioned file
       -v, --version         Show version and exit.
       -V, --verbose         increase output verbosity

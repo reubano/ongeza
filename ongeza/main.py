@@ -74,7 +74,8 @@ parser.add_argument(
     default=ongeza.DEFAULT_COMMIT_MSG_FMT, help='git commit message format')
 
 parser.add_argument(
-    '-g', '--sign', action='store_true', help='make a GPG-signed tag')
+    '-g', '--sign', action='store_true',
+    help='make a GPG-signed tag (implies `--tag`)')
 
 parser.add_argument(
     '-i', '--file', action='store', help='the versioned file')
@@ -141,7 +142,7 @@ def cleanup(project, new_version):
     if args.stash and project.stash_count:
         project.unstash()
 
-    if project.bumped and args.tag:
+    if project.bumped and (args.tag or args.sign):
         message = args.tag_msg_format.format(version=new_version)
         tag_text = args.tag_format.format(version=new_version)
         project.tag(message, tag_text, sign=args.sign)
