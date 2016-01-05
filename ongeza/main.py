@@ -153,7 +153,7 @@ def cleanup(project, new_version):
         raise RuntimeError("%s Nothing to push." % msg)
 
 
-def set_versions(new_version):
+def set_versions(project, new_version):
     # in some cases, e.g., single file python modules, the versioned file
     # can't be predetermined and we must do a 2nd search over all files
     for wave in [1, 2]:
@@ -176,7 +176,7 @@ def run():
 
     try:
         new_version = ongeza_project(project)
-        set_versions(new_version)
+        set_versions(project, new_version)
     except RuntimeError as err:
         project.logger.error(err)
         exit(1)
