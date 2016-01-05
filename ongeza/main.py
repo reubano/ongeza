@@ -31,12 +31,13 @@ parser = ArgumentParser(
 group = parser.add_mutually_exclusive_group()
 
 group.add_argument(
-    '-t', '--type', dest='ongeza_type', action='store', choices=['m', 'n', 'p'],
+    '-t', '--type', dest='ongeza_type', action='store', metavar='TYPE',
+    choices=['m', 'n', 'p', 'major', 'minor', 'patch'],
     help=(
         "version bump type, must be one of:\n"
-        "  m = major - [x].0.0\n"
-        "  n = minor - x.[y].0\n"
-        "  p = patch - x.y.[z]"))
+        "  m or major: [x].0.0\n"
+        "  n or minor: x.[y].0\n"
+        "  p or patch: x.y.[z]"))
 
 group.add_argument(
     '-s', '--set', dest='new_version', action='store',

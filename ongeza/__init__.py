@@ -207,9 +207,9 @@ class Project(Git):
         ----------
         version_num: string version name.
         ongeza_type: version ongeza type. one of:
-            m = major - [x].0.0
-            n = minor - x.[y].0
-            p = patch - x.y.[z]
+            m or major: [x].0.0
+            n or minor: x.[y].0
+            p or patch: x.y.[z]
 
         Returns
         -------
@@ -218,7 +218,10 @@ class Project(Git):
         switch = {
             'm': semver.bump_major,
             'n': semver.bump_minor,
-            'p': semver.bump_patch}
+            'p': semver.bump_patch,
+            'major': semver.bump_major,
+            'minor': semver.bump_minor,
+            'patch': semver.bump_patch}
 
         new_version = switch.get(ongeza_type)(self.version)
 

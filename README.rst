@@ -44,7 +44,13 @@ inside a python ``git`` repo, simply type:
 
 .. code-block:: bash
 
-    ongeza -Ttn
+    ongeza -tn
+
+Or via the long option style:
+
+.. code-block:: bash
+
+    ongeza --type=n
 
 As long as the repo contains a git tag with the current version, ongeza will
 automagically:
