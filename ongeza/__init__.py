@@ -35,7 +35,7 @@ from builtins import *
 
 from .git_utils import Git
 
-__version__ = '1.11.0'
+__version__ = '1.11.1'
 
 __title__ = 'ongeza'
 __author__ = 'Reuben Cummings'
