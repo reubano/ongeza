@@ -11,13 +11,13 @@ from __future__ import (
 import ongeza
 
 from sys import exit
-from os import getcwd, getenv, path as p
+from os import getcwd, path as p
 from argparse import RawTextHelpFormatter, ArgumentParser
 
 from builtins import *
-from . import Project, version_is_valid
+from . import Project, version_is_valid, TRAVIS
 
-CURDIR = None if getenv('TRAVIS') else p.abspath(getcwd())
+CURDIR = None if TRAVIS else p.abspath(getcwd())
 
 parser = ArgumentParser(
     description=(

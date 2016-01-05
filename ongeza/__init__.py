@@ -10,7 +10,8 @@ An automated way to follow the Semantic Versioning Specification
 Examples:
     basic usage::
 
-        >>> Project().current_version in {__version__, '1.2.0'}
+        >>> version = Project().current_version
+        >>> version == (version if TRAVIS else __version__)
         True
 
 Attributes:
@@ -23,6 +24,8 @@ from __future__ import (
     absolute_import, division, print_function, with_statement,
     unicode_literals)
 
+from os import getenv
+
 import semver
 import pygogo as gogo
 
@@ -32,7 +35,7 @@ from builtins import *
 
 from .git_utils import Git
 
-__version__ = '1.11.0'
+__version__ = '1.11.1'
 
 __title__ = 'ongeza'
 __author__ = 'Reuben Cummings'
@@ -44,6 +47,7 @@ __copyright__ = 'Copyright 2015 Reuben Cummings'
 DEFAULT_TAG_FMT = 'v{version}'
 DEFAULT_TAG_MSG_FMT = 'Version {version} Release'
 DEFAULT_COMMIT_MSG_FMT = 'Bump to version {version}'
+TRAVIS = getenv('TRAVIS')
 
 logger = gogo.Gogo(__name__).logger
 

@@ -44,13 +44,13 @@ inside a python ``git`` repo, simply type:
 
 .. code-block:: bash
 
-    ongeza -t minor
+    ongeza --type=minor
 
-Or via the long option style:
+Or via the short option style:
 
 .. code-block:: bash
 
-    ongeza --type=minor
+    ongeza -tn
 
 As long as the repo contains a git tag with the current version, ongeza will
 automagically:
