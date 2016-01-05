@@ -44,13 +44,13 @@ inside a python ``git`` repo, simply type:
 
 .. code-block:: bash
 
-    ongeza -tn
+    ongeza -t minor
 
 Or via the long option style:
 
 .. code-block:: bash
 
-    ongeza --type=n
+    ongeza --type=minor
 
 As long as the repo contains a git tag with the current version, ongeza will
 automagically:
@@ -107,7 +107,7 @@ Basic Examples
                             git tag message format
       -c FORMAT, --commit-msg-format FORMAT
                             git commit message format
-      -g, --sign            make a GPG-signed tag
+      -g, --sign            make a GPG-signed tag (implies `--tag`)
       -i FILE, --file FILE  the versioned file
       -v, --version         Show version and exit.
       -V, --verbose         increase output verbosity
@@ -122,9 +122,21 @@ Basic Examples
 
 .. code-block:: bash
 
-	ongeza -tn
+	ongeza --type=minor
+
+or
+
+.. code-block:: bash
+
+    ongeza -tn
 
 *manually set a version*
+
+.. code-block:: bash
+
+    ongeza --set 1.0.2
+
+or
 
 .. code-block:: bash
 
@@ -134,9 +146,21 @@ Basic Examples
 
 .. code-block:: bash
 
-	ongeza -Ttm
+	ongeza --tag --type=major
+
+or
+
+.. code-block:: bash
+
+    ongeza -Ttm
 
 *stash uncommitted changes and bump to a `patch` version*
+
+.. code-block:: bash
+
+    ongeza --stash --type=patch
+
+or
 
 .. code-block:: bash
 
@@ -149,7 +173,13 @@ Advanced Examples
 
 .. code-block:: bash
 
-    ongeza -gT --type=m
+    ongeza --sign --type=major
+
+or
+
+.. code-block:: bash
+
+    ongeza -gtm
 
 *bump `weird.file` to a `minor` version and use custom formats*
 
