@@ -31,15 +31,16 @@ parser = ArgumentParser(
 group = parser.add_mutually_exclusive_group()
 
 group.add_argument(
-    '-t', '--type', dest='ongeza_type', action='store', choices=['m', 'n', 'p'],
+    '-t', '--type', dest='ongeza_type', action='store', metavar='TYPE',
+    choices=['m', 'n', 'p', 'major', 'minor', 'patch'],
     help=(
         "version bump type, must be one of:\n"
-        "  m = major - [x].0.0\n"
-        "  n = minor - x.[y].0\n"
-        "  p = patch - x.y.[z]"))
+        "  m or major: [x].0.0\n"
+        "  n or minor: x.[y].0\n"
+        "  p or patch: x.y.[z]"))
 
 group.add_argument(
-    '-s', '--set', dest='new_version', action='store',
+    '-s', '--set', dest='new_version', action='store', metavar='VERSION',
     help='set arbitrary version number')
 
 parser.add_argument(
@@ -61,15 +62,15 @@ parser.add_argument(
     '-a', '--stash', action='store_true', help='stash uncommitted changes')
 
 parser.add_argument(
-    '-f', '--tag-format', action='store', default=ongeza.DEFAULT_TAG_FMT,
-    help='git tag format')
+    '-f', '--tag-format', action='store', metavar='FORMAT',
+    default=ongeza.DEFAULT_TAG_FMT, help='git tag format')
 
 parser.add_argument(
-    '-F', '--tag-msg-format', action='store',
+    '-F', '--tag-msg-format', action='store', metavar='FORMAT',
     default=ongeza.DEFAULT_TAG_MSG_FMT, help='git tag message format')
 
 parser.add_argument(
-    '-c', '--commit-msg-format', action='store',
+    '-c', '--commit-msg-format', action='store', metavar='FORMAT',
     default=ongeza.DEFAULT_COMMIT_MSG_FMT, help='git commit message format')
 
 parser.add_argument(
@@ -153,7 +154,7 @@ def cleanup(project, new_version):
         raise RuntimeError("%s Nothing to push." % msg)
 
 
-def set_versions(new_version):
+def set_versions(project, new_version):
     # in some cases, e.g., single file python modules, the versioned file
     # can't be predetermined and we must do a 2nd search over all files
     for wave in [1, 2]:
@@ -176,7 +177,7 @@ def run():
 
     try:
         new_version = ongeza_project(project)
-        set_versions(new_version)
+        set_versions(project, new_version)
     except RuntimeError as err:
         project.logger.error(err)
         exit(1)

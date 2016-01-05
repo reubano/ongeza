@@ -10,7 +10,8 @@ ongeza: your project versioning personal assistant
 Index
 -----
 `Introduction`_ | `Requirements`_ | `Motivation`_ | `Usage`_ | `Installation`_ |
-`Project Structure`_ | `Design Principles`_ | `Limitations`_ | `Scripts`_ | `Contributing`_ | `License`_
+`Project Structure`_ | `Design Principles`_ | `Limitations`_ | `Scripts`_ |
+`Contributing`_ | `License`_
 
 Introduction
 ------------
@@ -43,7 +44,13 @@ inside a python ``git`` repo, simply type:
 
 .. code-block:: bash
 
-    ongeza -Ttn
+    ongeza -tn
+
+Or via the long option style:
+
+.. code-block:: bash
+
+    ongeza --type=n
 
 As long as the repo contains a git tag with the current version, ongeza will
 automagically:
@@ -52,8 +59,6 @@ automagically:
 - figure out which file(s) to update with the new version number
 - make the appropriate updates and commit the changes
 - create a git tag with the new version number
-
-.. _command line application:
 
 Usage
 -----
@@ -84,30 +89,28 @@ Basic Examples
 	positional arguments:
 	  dir                   the project directory (default: /Users/reubano/Documents/Projects/ongeza).
 
-
-	optional arguments:
-	  -h, --help            show this help message and exit
-	  -t {m,n,p}, --type {m,n,p}
-	                        version bump type, must be one of:
-	                          m = major - [x].0.0
-	                          n = minor - x.[y].0
-	                          p = patch - x.y.[z]
-	  -s NEW_VERSION, --set NEW_VERSION
-	                        set arbitrary version number
-	  -S, --skip-commit     skip committing version bumped files
-	  -T, --tag             create git tag at HEAD with the bumped version number
-	  -p, --push            push to the remote origin
-	  -a, --stash           stash uncommitted changes
-	  -f TAG_FORMAT, --tag-format TAG_FORMAT
-	                        git tag format
-	  -F TAG_MSG_FORMAT, --tag-msg-format TAG_MSG_FORMAT
-	                        git tag message format
-	  -c COMMIT_MSG_FORMAT, --commit-msg-format COMMIT_MSG_FORMAT
-	                        git commit message format
+    optional arguments:
+      -h, --help            show this help message and exit
+      -t TYPE, --type TYPE  version bump type, must be one of:
+                              m or major: [x].0.0
+                              n or minor: x.[y].0
+                              p or patch: x.y.[z]
+      -s VERSION, --set VERSION
+                            set arbitrary version number
+      -S, --skip-commit     skip committing version bumped files
+      -T, --tag             create git tag at HEAD with the bumped version number
+      -p, --push            push to the remote origin
+      -a, --stash           stash uncommitted changes
+      -f FORMAT, --tag-format FORMAT
+                            git tag format
+      -F FORMAT, --tag-msg-format FORMAT
+                            git tag message format
+      -c FORMAT, --commit-msg-format FORMAT
+                            git commit message format
       -g, --sign            make a GPG-signed tag
-	  -i FILE, --file FILE  the versioned file
-	  -v, --version         Show version and exit.
-	  -V, --verbose         increase output verbosity
+      -i FILE, --file FILE  the versioned file
+      -v, --version         Show version and exit.
+      -V, --verbose         increase output verbosity
 
 *view current version*
 
