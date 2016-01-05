@@ -40,7 +40,7 @@ group.add_argument(
         "  p or patch: x.y.[z]"))
 
 group.add_argument(
-    '-s', '--set', dest='new_version', action='store',
+    '-s', '--set', dest='new_version', action='store', metavar='VERSION',
     help='set arbitrary version number')
 
 parser.add_argument(
@@ -62,15 +62,15 @@ parser.add_argument(
     '-a', '--stash', action='store_true', help='stash uncommitted changes')
 
 parser.add_argument(
-    '-f', '--tag-format', action='store', default=ongeza.DEFAULT_TAG_FMT,
-    help='git tag format')
+    '-f', '--tag-format', action='store', metavar='FORMAT',
+    default=ongeza.DEFAULT_TAG_FMT, help='git tag format')
 
 parser.add_argument(
-    '-F', '--tag-msg-format', action='store',
+    '-F', '--tag-msg-format', action='store', metavar='FORMAT',
     default=ongeza.DEFAULT_TAG_MSG_FMT, help='git tag message format')
 
 parser.add_argument(
-    '-c', '--commit-msg-format', action='store',
+    '-c', '--commit-msg-format', action='store', metavar='FORMAT',
     default=ongeza.DEFAULT_COMMIT_MSG_FMT, help='git commit message format')
 
 parser.add_argument(
