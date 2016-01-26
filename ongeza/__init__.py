@@ -35,7 +35,7 @@ from builtins import *
 
 from .git_utils import Git
 
-__version__ = '1.11.1'
+__version__ = '1.11.2'
 
 __title__ = 'ongeza'
 __author__ = 'Reuben Cummings'
@@ -159,7 +159,7 @@ class Project(Git):
             switch = {1: wave_one, 2: misc_files}
 
             for git_file in self.files:
-                if any(fnmatch(git_file, file) for file in switch[wave]):
+                if any(fnmatch(git_file, file_) for file_ in switch[wave]):
                     yield git_file
 
     def set_versions(self, new_version, wave=1):
