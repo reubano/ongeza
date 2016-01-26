@@ -196,8 +196,6 @@ or
 Installation
 ------------
 
-(You are using a `virtualenv`_, right?)
-
 At the command line, install ongeza using either ``pip`` (*recommended*)
 
 .. code-block:: bash
@@ -210,7 +208,12 @@ or ``easy_install``
 
     easy_install ongeza
 
-Please see the `installation doc`_ for more details.
+Alternatively, you can install ``ongeza`` for just the current user:
+
+.. code-block:: bash
+
+    pip install --user ongeza
+
 
 Project structure
 -----------------
@@ -315,4 +318,3 @@ ongeza is distributed under the `MIT License`_.
 .. _Semantic Versioning Specification: http://semver.org/
 .. _virtualenv: http://www.virtualenv.org/en/latest/index.html
 .. _contributing doc: https://github.com/reubano/ongeza/blob/master/CONTRIBUTING.rst
-.. _installation doc: https://github.com/reubano/ongeza/blob/master/INSTALLATION.rst
