@@ -159,7 +159,7 @@ class Project(Git):
             switch = {1: wave_one, 2: misc_files}
 
             for git_file in self.files:
-                if any(fnmatch(git_file, file) for file in switch[wave]):
+                if any(fnmatch(git_file, file_) for file_ in switch[wave]):
                     yield git_file
 
     def set_versions(self, new_version, wave=1):
