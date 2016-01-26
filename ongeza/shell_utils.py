@@ -23,9 +23,10 @@ from __future__ import (
     absolute_import, division, print_function, with_statement,
     unicode_literals)
 
-from subprocess import call, check_call, check_output, CalledProcessError
+from subprocess import call, check_output, CalledProcessError
 from builtins import *
 
+import os
 
 def sh(cmd, output=False, path=None):
     """
@@ -42,8 +43,8 @@ def sh(cmd, output=False, path=None):
 
     if path:
         try:
-            check_call(['cd', path])
-        except CalledProcessError:
+            os.chdir(os.path.abspath(path))
+        except OSError:
             good = False
 
     if output and good:
