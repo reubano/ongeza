@@ -41,3 +41,4 @@ objects.inv
 
 # osx files
 .DS_Store
+.scripttest/*
