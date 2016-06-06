@@ -200,20 +200,13 @@ At the command line, install ongeza using either ``pip`` (*recommended*)
 
 .. code-block:: bash
 
-    pip install ongeza
+    pip install --user ongeza
 
-or ``easy_install``
+or (if you must) ``easy_install``
 
 .. code-block:: bash
 
     easy_install ongeza
-
-Alternatively, you can install ``ongeza`` for just the current user:
-
-.. code-block:: bash
-
-    pip install --user ongeza
-
 
 Project structure
 -----------------

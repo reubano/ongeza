@@ -20,11 +20,13 @@ from __future__ import (
 
 from functools import partial, cmp_to_key
 
-import pygogo as gogo
 import semver
+import pygogo as gogo
 
 from builtins import *
 from .shell_utils import sh
+
+logger = gogo.Gogo(__name__, monolog=True).logger
 
 
 class Git(object):
@@ -39,7 +41,7 @@ class Git(object):
         """
         self.dir = dir_
         self.stash_count = 0
-        self.logger = gogo.Gogo(__name__, verbose=verbose).logger
+        self.logger = logger
         self.sh = partial(sh, path=self.dir)
 
     @property

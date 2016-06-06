@@ -23,21 +23,55 @@ from __future__ import (
     absolute_import, division, print_function, with_statement,
     unicode_literals)
 
-from subprocess import call, check_output, CalledProcessError
-from builtins import *
-
 import os
 
-def sh(cmd, output=False, path=None):
+from subprocess import check_call, check_output, CalledProcessError
+from builtins import *
+
+try:
+    from subprocess import DEVNULL
+except ImportError:
+    DEVNULL = False
+
+
+def quiet_call(cmd, devnull):
+    """Calls an external command while suppressing stdout.
+
+    Args:
+        cmd (str): The command to run
+        devnull (object): File-like object
+
+    Returns:
+        bool: True if the commabd return code was zero, else otherwise
+
+    Examples:
+        >>> with open(os.devnull, 'wb') as devnull:
+        ...     quiet_call('ls', devnull)
+        True
     """
-    runs an external command.
+    try:
+        check_call(cmd, shell=True, stdout=devnull)
+    except CalledProcessError:
+        return False
+    else:
+        return True
 
-    if the command has a non-zero return code raise a buildfailure. you can pass
-    `error=True` to allow non-zero return codes to be allowed to pass silently,
-    silently into the night. passing `path="some/path"` will chdir to
-    "some/path" before exectuting the command.
 
-        :returns: string of the captured output of the command.
+def sh(cmd, output=False, path=None):
+    """runs an external command.
+
+    Args:
+        cmd (str): The command to run
+        output (bool): return the command output (default: False)
+        path (str): The path to run the command from
+
+    Returns:
+        mixed: command output if `output` is True, else bool representing
+            successful completion of the command
+
+    Examples:
+        >>> len(sh('ls', True)) > 0
+        True
     """
     good = True
 
@@ -53,7 +87,11 @@ def sh(cmd, output=False, path=None):
         except CalledProcessError:
             result = ''
     elif good:
-        result = call(cmd, shell=True) is 0
+        if DEVNULL:
+            result = quiet_call(cmd, DEVNULL)
+        else:
+            with open(os.devnull, 'wb') as devnull:
+                result = quiet_call(cmd, devnull)
     elif output:
         result = ''
     else:
@@ -63,9 +101,12 @@ def sh(cmd, output=False, path=None):
 
 
 def choice(msg):
-    """
-    prompts for a True/False input from the user command line.
+    """Prompts for a True/False input from the user command line.
 
-        :returns: boolean for the True/False user response.
+    Args:
+        msg (str): The message to present to the user
+
+    Returns:
+        bool: the user input
     """
     return raw_input("{}  [Yn]: ".format(msg)).lower().startswith('y')

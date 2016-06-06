@@ -109,7 +109,7 @@ def prelim_check(project):
 def ongeza_project(project):
     if project.is_dirty and not args.stash:
         error = (
-            "Can't ongeza the version with uncommitted changes. Please "
+            "Can't bump the version with uncommitted changes. Please "
             "commit your changes or stash the following files and try "
             "again. Optionally, run with '-a' option to auto stash these "
             "files. Dirty files:\n%s" % "\n".join(project.dirty_files))
@@ -133,7 +133,7 @@ def ongeza_project(project):
 
 
 def cleanup(project, new_version):
-    msg = "Couldn't find a version to ongeza."
+    msg = "Couldn't find a version to bump."
     if project.bumped and not args.skip_commit:
         message = args.commit_msg_format.format(version=new_version)
         project.add(project.dirty_files)

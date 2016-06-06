@@ -27,15 +27,14 @@ from __future__ import (
 from os import getenv
 
 import semver
-import pygogo as gogo
 
 from fnmatch import fnmatch
 from subprocess import CalledProcessError
 from builtins import *
 
-from .git_utils import Git
+from .git_utils import Git, logger
 
-__version__ = '1.11.2'
+__version__ = '1.12.0'
 
 __title__ = 'ongeza'
 __author__ = 'Reuben Cummings'
@@ -48,8 +47,6 @@ DEFAULT_TAG_FMT = 'v{version}'
 DEFAULT_TAG_MSG_FMT = 'Version {version} Release'
 DEFAULT_COMMIT_MSG_FMT = 'Bump to version {version}'
 TRAVIS = getenv('TRAVIS')
-
-logger = gogo.Gogo(__name__).logger
 
 
 class Project(Git):
@@ -90,6 +87,9 @@ class Project(Git):
         super(Project, self).__init__(dir_, verbose)
         self.bumped = False
         self.file = file_
+
+        gsed = self.sh('sed --help')
+        self.sed = "sed -i" if gsed else "sed -i ''"
 
         if version:
             self.version = version
@@ -191,15 +191,15 @@ class Project(Git):
                     else:
                         rep_line_num = rep_line.split(':')[0]
                         # replace with new version number
-                        cmd = ("sed -i '' '%ss/[0-9]*\.[0-9]*\.[0-9]*/%s/g' %s"
-                            % (rep_line_num, new_version, file_))
+                        cmd = ("%s %ss/[0-9]*\.[0-9]*\.[0-9]*/%s/g' %s"
+                            % (self.sed, rep_line_num, new_version, file_))
                 else:
                     cmd = None
             else:
                 # replace current version with new version only if the line
                 # contains the word 'version'
-                cmd = ("sed -i '' '/version/s/%s/%s/g' %s"
-                    % (self.version, new_version, file_))
+                cmd = ("%s '/version/s/%s/%s/g' %s"
+                    % (self.sed, self.version, new_version, file_))
 
             self.sh(cmd) if cmd else None
 
