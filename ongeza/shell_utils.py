@@ -23,10 +23,25 @@ from __future__ import (
     absolute_import, division, print_function, with_statement,
     unicode_literals)
 
-from subprocess import call, check_output, CalledProcessError
+import os
+
+from subprocess import check_call, check_output, CalledProcessError
 from builtins import *
 
-import os
+try:
+    from subprocess import DEVNULL
+except ImportError:
+    DEVNULL = False
+
+
+def quiet_call(cmd, devnull):
+    try:
+        check_call(cmd, shell=True, stdout=devnull)
+    except CalledProcessError:
+        return False
+    else:
+        return True
+
 
 def sh(cmd, output=False, path=None):
     """
@@ -53,7 +68,11 @@ def sh(cmd, output=False, path=None):
         except CalledProcessError:
             result = ''
     elif good:
-        result = call(cmd, shell=True) is 0
+        if DEVNULL:
+            result = quiet_call(cmd, DEVNULL)
+        else:
+            with open(os.devnull, 'wb') as devnull:
+                result = quiet_call(cmd, devnull)
     elif output:
         result = ''
     else:

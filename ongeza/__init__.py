@@ -91,6 +91,9 @@ class Project(Git):
         self.bumped = False
         self.file = file_
 
+        gsed = self.sh('sed --help')
+        self.sed = "sed -i" if gsed else "sed -i ''"
+
         if version:
             self.version = version
         else:
@@ -191,15 +194,15 @@ class Project(Git):
                     else:
                         rep_line_num = rep_line.split(':')[0]
                         # replace with new version number
-                        cmd = ("sed -i '' '%ss/[0-9]*\.[0-9]*\.[0-9]*/%s/g' %s"
-                            % (rep_line_num, new_version, file_))
+                        cmd = ("%s %ss/[0-9]*\.[0-9]*\.[0-9]*/%s/g' %s"
+                            % (self.sed, rep_line_num, new_version, file_))
                 else:
                     cmd = None
             else:
                 # replace current version with new version only if the line
                 # contains the word 'version'
-                cmd = ("sed -i '' '/version/s/%s/%s/g' %s"
-                    % (self.version, new_version, file_))
+                cmd = ("%s '/version/s/%s/%s/g' %s"
+                    % (self.sed, self.version, new_version, file_))
 
             self.sh(cmd) if cmd else None
 
