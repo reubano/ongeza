@@ -79,5 +79,8 @@ setup(
         'Operating System :: Microsoft :: Windows',
     ],
     platforms=['MacOS X', 'Windows', 'Linux'],
-    scripts=[p.join('bin', 'ongeza')]
+    entry_points="""
+        [console_scripts]
+        ongeza=ongeza.main:run
+    """
 )
