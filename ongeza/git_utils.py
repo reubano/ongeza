@@ -108,12 +108,12 @@ class Git(object):
 
     def commit(self, message):
         self.logger.info('making git commit: "%s"', message)
-        return self.sh("git commit -m '%s'" % message)
+        return self.sh('git commit -m "%s"' % message)
 
     def tag(self, message, tag_text, sign=False):
         self.logger.info('making git tag: "%s"', message)
         opts = 'sm' if sign else 'm'
-        cmd = "git tag -%s '%s' %s" % (opts, message, tag_text)
+        cmd = 'git tag -%s "%s" %s' % (opts, message, tag_text)
         return self.sh(cmd)
 
     def push(self):
