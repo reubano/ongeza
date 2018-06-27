@@ -26,7 +26,7 @@ from __future__ import (
 import os
 
 from subprocess import check_call, check_output, CalledProcessError
-from builtins import *
+from builtins import *  # noqa pylint: disable=unused-import
 
 try:
     from subprocess import DEVNULL

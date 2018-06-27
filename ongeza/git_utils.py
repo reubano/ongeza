@@ -23,7 +23,7 @@ from functools import partial, cmp_to_key
 import semver
 import pygogo as gogo
 
-from builtins import *
+from builtins import *  # noqa pylint: disable=unused-import
 from .shell_utils import sh
 
 logger = gogo.Gogo(__name__, monolog=True).logger

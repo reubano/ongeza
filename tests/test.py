@@ -24,7 +24,7 @@ from os import path as p
 from io import StringIO
 from timeit import default_timer as timer
 
-from builtins import *
+from builtins import *  # noqa pylint: disable=unused-import
 from scripttest import TestFileEnvironment
 
 

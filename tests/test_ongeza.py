@@ -14,7 +14,7 @@ import sys
 import nose.tools as nt
 import pygogo as gogo
 
-from builtins import *
+from builtins import *  # noqa pylint: disable=unused-import
 
 sys.path.append('../ongeza')
 from ongeza import __version__ as version, TRAVIS

@@ -6,10 +6,6 @@ from __future__ import (
     unicode_literals)
 
 import sys
-
-from os import path as p
-from builtins import *
-
 import ongeza as module
 import pkutils
 
