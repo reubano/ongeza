@@ -67,7 +67,7 @@ ongeza is intended to be used from the command line.
 
 .. code-block:: bash
 
-	ongeza [options] <dir>
+    ongeza [options] <dir>
 
 Basic Examples
 ~~~~~~~~~~~~~~
@@ -80,14 +80,14 @@ Basic Examples
 
 .. code-block:: bash
 
-	usage: ongeza [options] <dir>
+    usage: ongeza [options] <dir>
 
-	description: ongeza makes following the Semantic Versioning Specification a breeze.
-	If called with no options, ongeza will print the current git repository's tag version.
-	If <dir> is not specified, the current dir is used.
+    description: ongeza makes following the Semantic Versioning Specification a breeze.
+    If called with no options, ongeza will print the current git repository's tag version.
+    If <dir> is not specified, the current dir is used.
 
-	positional arguments:
-	  dir                   the project directory (default: /Users/reubano/Documents/Projects/ongeza).
+    positional arguments:
+      dir                   the project directory (default: /Users/reubano/Documents/Projects/ongeza).
 
     optional arguments:
       -h, --help            show this help message and exit
@@ -116,13 +116,13 @@ Basic Examples
 
 .. code-block:: bash
 
-	ongeza
+    ongeza
 
 *bump to a `minor` version*
 
 .. code-block:: bash
 
-	ongeza --type=minor
+    ongeza --type=minor
 
 or
 
@@ -140,13 +140,13 @@ or
 
 .. code-block:: bash
 
-	ongeza -s 1.0.2
+    ongeza -s 1.0.2
 
 *bump to a `major` version and add a git tag*
 
 .. code-block:: bash
 
-	ongeza --tag --type=major
+    ongeza --tag --type=major
 
 or
 
@@ -164,7 +164,7 @@ or
 
 .. code-block:: bash
 
-	ongeza -atp
+    ongeza -atp
 
 Advanced Examples
 ~~~~~~~~~~~~~~~~~
@@ -185,13 +185,13 @@ or
 
 .. code-block:: bash
 
-	ongeza -tn --file='weird.file' --tag-format='{version}' --commit-msg-format='New version: {version}'
+    ongeza -tn --file='weird.file' --tag-format='{version}' --commit-msg-format='New version: {version}'
 
 *bump a remote directory to a `minor` version and use a custom tag message format*
 
 .. code-block:: bash
 
-	ongeza -tn --tag-msg-format='Release: {version}' /path/to/remote/dir
+    ongeza -tn --tag-msg-format='Release: {version}' /path/to/remote/dir
 
 Installation
 ------------

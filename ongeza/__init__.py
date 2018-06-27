@@ -30,11 +30,11 @@ import semver
 
 from fnmatch import fnmatch
 from subprocess import CalledProcessError
-from builtins import *
+from builtins import *  # noqa pylint: disable=unused-import
 
 from .git_utils import Git, logger
 
-__version__ = '1.12.0'
+__version__ = '1.12.1'
 
 __title__ = 'ongeza'
 __author__ = 'Reuben Cummings'

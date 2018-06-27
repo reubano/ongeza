@@ -10,7 +10,7 @@ from __future__ import (
     absolute_import, division, print_function, with_statement,
     unicode_literals)
 
-from builtins import *
+from builtins import *  # noqa pylint: disable=unused-import
 
 
 def setup_package():

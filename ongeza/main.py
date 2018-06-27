@@ -14,7 +14,7 @@ from sys import exit
 from os import getcwd, path as p
 from argparse import RawTextHelpFormatter, ArgumentParser
 
-from builtins import *
+from builtins import *  # noqa pylint: disable=unused-import
 from . import Project, version_is_valid, TRAVIS
 
 CURDIR = None if TRAVIS else p.abspath(getcwd())
