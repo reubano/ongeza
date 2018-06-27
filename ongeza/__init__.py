@@ -34,7 +34,7 @@ from builtins import *  # noqa pylint: disable=unused-import
 
 from .git_utils import Git, logger
 
-__version__ = '1.12.1'
+__version__ = '1.12.2'
 
 __title__ = 'ongeza'
 __author__ = 'Reuben Cummings'
