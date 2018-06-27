@@ -17,9 +17,9 @@ Version 2.0.2
 
 Released on 2013-05-23
 
-    * CHANGES.md added to repo
+    * CHANGES.rst added to repo
         * added changelog summary for 2.0.1
-    * minor updates to project README.md
+    * minor updates to project README.rst
     * renamed:    ongeza.py -> ongeza. updated setup script
     * renamed:    git-changelog -> ongeza-git-changelog
     * git tag list fix
